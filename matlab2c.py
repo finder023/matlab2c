@@ -26,8 +26,7 @@ def main():
     cvtor = Matlab2CVisitor(log=args.log)
     cvtor.visit(tree) 
     if args.log:
-        print(cvtor.func_rtype) 
-
+        pass
 if __name__ == '__main__':
     main()
 
