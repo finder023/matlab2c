@@ -43,32 +43,31 @@ digit : DIGIT ;
 null_assign : NULL_ASSIGN ;
 
 expr:
-        unary_operation expr                     # unary_operaExpr
-        | LEFTPAREN expr RIGHTPAREN              # parensExpr
-        | expr multiplicative_operation expr     # multiExpr
-        | expr additive_operation expr           # addExpr
-        | expr relational_operation expr         # relatExpr
-        | expr andor_operation expr              # andorExpr
-        | expr logical_operation expr            # logicExpr
-        | digit                                  # digitExpr
-        | truth_value                            # truthExpr
-        | name (DOT name)*                           # nameExpr
+        unary_operation expr                        # unary_operaExpr
+        | LEFTPAREN expr RIGHTPAREN                 # parensExpr
+        | expr math_operation expr                  # mathExpr
+        | expr relational_operation expr            # relatExpr
+        | expr andor_operation expr                 # andorExpr
+        | expr logical_operation expr               # logicExpr
+        | digit                                     # digitExpr
+        | truth_value                               # truthExpr
+        | name (DOT name)*                          # nameExpr
         | leftbracket name COMMA name COMMA name rightbracket  # regExpr
-        | function_call                          # funcallExpr
-        | element                                # elemExpr
-        | null_assign                            # nullExpr
+        | function_call                             # funcallExpr
+        | element                                   # elemExpr
+        | null_assign                               # nullExpr
         | (QUOTE name QUOTE | DOUBLEQUOTE name DOUBLEQUOTE | QUOTE QUOTE | DOUBLEQUOTE DOUBLEQUOTE)  # strExpr
          ;
 
-unary_operation : SUB|NOT ;
-multiplicative_operation : MUL|DIV ;
-additive_operation : ADD|SUB ;
-relational_operation : EQUAL|UNEQUAL|LESS|LESS_EQUAL|GREATER|GREATER_EQUAL ;
-andor_operation : AND|OR ;
-logical_operation : LOGICAL_AND|LOGICAL_OR ;
-truth_value : TRUE_VALUE|FALSE_VALUE ;
 
-location_name : COLON|expr ;
+unary_operation : SUB | NOT ;
+math_operation: AND | SUB | MUL | DIV;
+relational_operation : EQUAL | UNEQUAL | LESS | LESS_EQUAL | GREATER | GREATER_EQUAL ;
+andor_operation : AND | OR ;
+logical_operation : LOGICAL_AND | LOGICAL_OR ;
+truth_value : TRUE_VALUE | FALSE_VALUE ;
+
+location_name : COLON | expr ;
 
 location:
      location_name COMMA location_name ;
