@@ -35,4 +35,6 @@ function  [semaphore_id,return_code] = create_semphore( semaphore_name,current_v
     sem_num = sem_num + 1;
     return_code = NO_ERROR;
 
+    return;
+
 end

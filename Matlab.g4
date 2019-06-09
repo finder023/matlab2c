@@ -44,11 +44,8 @@ null_assign : NULL_ASSIGN ;
 
 expr:
         unary_operation expr                        # unary_operaExpr
+        | expr binary_operation expr                # binaryExpr
         | LEFTPAREN expr RIGHTPAREN                 # parensExpr
-        | expr math_operation expr                  # mathExpr
-        | expr relational_operation expr            # relatExpr
-        | expr andor_operation expr                 # andorExpr
-        | expr logical_operation expr               # logicExpr
         | digit                                     # digitExpr
         | truth_value                               # truthExpr
         | name (DOT name)*                          # nameExpr
@@ -59,12 +56,9 @@ expr:
         | (QUOTE name QUOTE | DOUBLEQUOTE name DOUBLEQUOTE | QUOTE QUOTE | DOUBLEQUOTE DOUBLEQUOTE)  # strExpr
          ;
 
-
+binary_operation: ADD | SUB | MUL | DIV | EQUAL | UNEQUAL | LESS | LESS_EQUAL 
+                | GREATER | GREATER_EQUAL | AND | OR | LOGICAL_AND | LOGICAL_OR;
 unary_operation : SUB | NOT ;
-math_operation: AND | SUB | MUL | DIV;
-relational_operation : EQUAL | UNEQUAL | LESS | LESS_EQUAL | GREATER | GREATER_EQUAL ;
-andor_operation : AND | OR ;
-logical_operation : LOGICAL_AND | LOGICAL_OR ;
 truth_value : TRUE_VALUE | FALSE_VALUE ;
 
 location_name : COLON | expr ;

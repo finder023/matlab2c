@@ -1,5 +1,5 @@
 {
-    "sem_record": "sem_t*[]",
+    "sem_record": "sem_t*",
     "sem_num": "int",
 
     "semaphore_id": "semaphore_id_t*",

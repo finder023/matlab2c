@@ -143,6 +143,15 @@ class MatlabListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by MatlabParser#funcallExpr.
+    def enterFuncallExpr(self, ctx:MatlabParser.FuncallExprContext):
+        pass
+
+    # Exit a parse tree produced by MatlabParser#funcallExpr.
+    def exitFuncallExpr(self, ctx:MatlabParser.FuncallExprContext):
+        pass
+
+
     # Enter a parse tree produced by MatlabParser#nullExpr.
     def enterNullExpr(self, ctx:MatlabParser.NullExprContext):
         pass
@@ -161,12 +170,21 @@ class MatlabListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by MatlabParser#multiExpr.
-    def enterMultiExpr(self, ctx:MatlabParser.MultiExprContext):
+    # Enter a parse tree produced by MatlabParser#elemExpr.
+    def enterElemExpr(self, ctx:MatlabParser.ElemExprContext):
         pass
 
-    # Exit a parse tree produced by MatlabParser#multiExpr.
-    def exitMultiExpr(self, ctx:MatlabParser.MultiExprContext):
+    # Exit a parse tree produced by MatlabParser#elemExpr.
+    def exitElemExpr(self, ctx:MatlabParser.ElemExprContext):
+        pass
+
+
+    # Enter a parse tree produced by MatlabParser#binaryExpr.
+    def enterBinaryExpr(self, ctx:MatlabParser.BinaryExprContext):
+        pass
+
+    # Exit a parse tree produced by MatlabParser#binaryExpr.
+    def exitBinaryExpr(self, ctx:MatlabParser.BinaryExprContext):
         pass
 
 
@@ -215,57 +233,12 @@ class MatlabListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by MatlabParser#funcallExpr.
-    def enterFuncallExpr(self, ctx:MatlabParser.FuncallExprContext):
+    # Enter a parse tree produced by MatlabParser#binary_operation.
+    def enterBinary_operation(self, ctx:MatlabParser.Binary_operationContext):
         pass
 
-    # Exit a parse tree produced by MatlabParser#funcallExpr.
-    def exitFuncallExpr(self, ctx:MatlabParser.FuncallExprContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#addExpr.
-    def enterAddExpr(self, ctx:MatlabParser.AddExprContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#addExpr.
-    def exitAddExpr(self, ctx:MatlabParser.AddExprContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#elemExpr.
-    def enterElemExpr(self, ctx:MatlabParser.ElemExprContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#elemExpr.
-    def exitElemExpr(self, ctx:MatlabParser.ElemExprContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#logicExpr.
-    def enterLogicExpr(self, ctx:MatlabParser.LogicExprContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#logicExpr.
-    def exitLogicExpr(self, ctx:MatlabParser.LogicExprContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#relatExpr.
-    def enterRelatExpr(self, ctx:MatlabParser.RelatExprContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#relatExpr.
-    def exitRelatExpr(self, ctx:MatlabParser.RelatExprContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#andorExpr.
-    def enterAndorExpr(self, ctx:MatlabParser.AndorExprContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#andorExpr.
-    def exitAndorExpr(self, ctx:MatlabParser.AndorExprContext):
+    # Exit a parse tree produced by MatlabParser#binary_operation.
+    def exitBinary_operation(self, ctx:MatlabParser.Binary_operationContext):
         pass
 
 
@@ -275,51 +248,6 @@ class MatlabListener(ParseTreeListener):
 
     # Exit a parse tree produced by MatlabParser#unary_operation.
     def exitUnary_operation(self, ctx:MatlabParser.Unary_operationContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#multiplicative_operation.
-    def enterMultiplicative_operation(self, ctx:MatlabParser.Multiplicative_operationContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#multiplicative_operation.
-    def exitMultiplicative_operation(self, ctx:MatlabParser.Multiplicative_operationContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#additive_operation.
-    def enterAdditive_operation(self, ctx:MatlabParser.Additive_operationContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#additive_operation.
-    def exitAdditive_operation(self, ctx:MatlabParser.Additive_operationContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#relational_operation.
-    def enterRelational_operation(self, ctx:MatlabParser.Relational_operationContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#relational_operation.
-    def exitRelational_operation(self, ctx:MatlabParser.Relational_operationContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#andor_operation.
-    def enterAndor_operation(self, ctx:MatlabParser.Andor_operationContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#andor_operation.
-    def exitAndor_operation(self, ctx:MatlabParser.Andor_operationContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#logical_operation.
-    def enterLogical_operation(self, ctx:MatlabParser.Logical_operationContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#logical_operation.
-    def exitLogical_operation(self, ctx:MatlabParser.Logical_operationContext):
         pass
 
 

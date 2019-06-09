@@ -84,6 +84,11 @@ class MatlabVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by MatlabParser#funcallExpr.
+    def visitFuncallExpr(self, ctx:MatlabParser.FuncallExprContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by MatlabParser#nullExpr.
     def visitNullExpr(self, ctx:MatlabParser.NullExprContext):
         return self.visitChildren(ctx)
@@ -94,8 +99,13 @@ class MatlabVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by MatlabParser#multiExpr.
-    def visitMultiExpr(self, ctx:MatlabParser.MultiExprContext):
+    # Visit a parse tree produced by MatlabParser#elemExpr.
+    def visitElemExpr(self, ctx:MatlabParser.ElemExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by MatlabParser#binaryExpr.
+    def visitBinaryExpr(self, ctx:MatlabParser.BinaryExprContext):
         return self.visitChildren(ctx)
 
 
@@ -124,63 +134,13 @@ class MatlabVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by MatlabParser#funcallExpr.
-    def visitFuncallExpr(self, ctx:MatlabParser.FuncallExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#addExpr.
-    def visitAddExpr(self, ctx:MatlabParser.AddExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#elemExpr.
-    def visitElemExpr(self, ctx:MatlabParser.ElemExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#logicExpr.
-    def visitLogicExpr(self, ctx:MatlabParser.LogicExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#relatExpr.
-    def visitRelatExpr(self, ctx:MatlabParser.RelatExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#andorExpr.
-    def visitAndorExpr(self, ctx:MatlabParser.AndorExprContext):
+    # Visit a parse tree produced by MatlabParser#binary_operation.
+    def visitBinary_operation(self, ctx:MatlabParser.Binary_operationContext):
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by MatlabParser#unary_operation.
     def visitUnary_operation(self, ctx:MatlabParser.Unary_operationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#multiplicative_operation.
-    def visitMultiplicative_operation(self, ctx:MatlabParser.Multiplicative_operationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#additive_operation.
-    def visitAdditive_operation(self, ctx:MatlabParser.Additive_operationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#relational_operation.
-    def visitRelational_operation(self, ctx:MatlabParser.Relational_operationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#andor_operation.
-    def visitAndor_operation(self, ctx:MatlabParser.Andor_operationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#logical_operation.
-    def visitLogical_operation(self, ctx:MatlabParser.Logical_operationContext):
         return self.visitChildren(ctx)
 
 
