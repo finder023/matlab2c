@@ -41,13 +41,22 @@ class Expr():
         self._dep_str = str()
    
     def __repr__(self):
-        return '({0._type!r}: {0._name!r} | {0._dep_str!r})'.format(self)
+        self._dep2str()
+        if len(self._name) != 0 and len(self._deps) != 0:
+            return '<type:{0._type}, name:{0._name}, deps:{0._dep_str}>'.format(self)
+        if len(self._deps) != 0 and len(self._name) == 0:
+            return '<type:{0._type}, deps:{0._dep_str}>'.format(self)
+        if len(self._deps) == 0 and len(self._name) != 0:
+            return '<type:{0._type}, name:{0._name}>'.format(self)
+        return '<type:{0._type}>'.format(self)
 
     def __str__(self):
-        return '({0._type!s}: {0._name!s} | {0._dep_str!s})'.format(self)
+        return self.__repr__()
+
 
     def _dep2str(self):
-        self._dep_str = ','.join(self._deps)
+        # self._dep_str = ','.join(self._deps)
+        self._dep_str = str(self._deps)
 
     @property
     def Name(self):
@@ -89,9 +98,7 @@ class NormalExpr(Expr):
 class FunctionExpr(Expr):
     def __init__(self, func_declar_=Expr("functoin"), 
                     state_=Expr("statement")):
-        super().__init__('functon')
-        self.func_declar = func_declar_
-        self.states = state_
+        super().__init__(type_='functon', deps_=[func_declar_, state_])
 
     def toStr():
         pass
@@ -99,13 +106,6 @@ class FunctionExpr(Expr):
 class AssignExpr(Expr):
     def __init__(self, left_=Expr(), right_=Expr()):
         super().__init__(type_='assign_state', deps_=[left_, right_])
-    
-    def __repr__(self):
-        return 'AssignExpr({0.Type!r}:{0.Name!r} | {0.Deps!r})'.format(self)
-
-    def __str__(self):
-        return 'AssignExpr({0.Type!s}:{0.Name!s} | {0.Deps!s})'.format(self)
-
    
     def toStr():
         pass
@@ -123,12 +123,6 @@ class BinaryExpr(Expr):
         super().__init__(type_='binaryExpr', name_=opr_, deps_=[left_, right_])
         self._opr = opr_
     
-    def __repr__(self):
-        return 'BinaryExpr({0.Name!r}:{0.Type!r} | {0.Deps!r})'.format(self)
-
-    def __str__(self):
-        return 'BinaryExpr({0.Name!s}:{0.Type!s} | {0.Deps!s})'.format(self)
-
     def toStr():
         pass
 
@@ -136,13 +130,6 @@ class FunctionCallExpr(Expr):
     def __init__(self, name_=Expr(), paralist_=Expr()):
         super().__init__(type_='function_call', deps_=[name_, paralist_])
     
-    def __repr__(self):
-        return 'FunctionCallExpr({0.Name!r}:{0.Deps!r})'.format(self)
-
-    def __str__(self):
-        return 'FunctionCallExpr({0.Name!s}:{0.Deps!s})'.format(self)
-
-
     def toStr():
         pass
 

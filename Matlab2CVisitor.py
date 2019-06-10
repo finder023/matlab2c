@@ -316,3 +316,12 @@ class Matlab2CVisitor(MatlabVisitor):
             else_state_ = self.visitCom_statement(ctx.com_statement())
 
         return ElseExpr(com_=else_state_)
+
+    # Visit a parse tree produced by MatlabParser#break_state.
+    def visitBreak_state(self, ctx:MatlabParser.Break_stateContext):
+        return NormalExpr(type_='break_state')
+
+    # Visit a parse tree produced by MatlabParser#continue_state.
+    def visitContinue_state(self, ctx:MatlabParser.Continue_stateContext):
+        return NormalExpr(type_='continue_state')
+
