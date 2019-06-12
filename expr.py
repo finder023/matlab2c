@@ -39,7 +39,15 @@ class Expr():
         self._type = type_
         self._deps = deps_
         self._dep_str = str()
-   
+
+        # format
+        self._indent_str = ' ' * 4
+        # self._indent = '\t'
+        self.indent_level = 0
+        self.sub_expr = True 
+        self._indent_prefix = str()
+        self._end = ''
+
     def __repr__(self):
         self._dep2str()
         if len(self._name) != 0 and len(self._deps) != 0:
@@ -85,6 +93,9 @@ class Expr():
         if not isinstance(type_, str):
             raise TypeError("Type excepted a string")
         self._type = type_ 
+    
+    def toStr(self):
+        return 'Expr'
    
 # digit, truth_value, nameExpr, function call, 
 class NormalExpr(Expr):
@@ -93,6 +104,9 @@ class NormalExpr(Expr):
         self.var_list = var_list_
     
     def toStr():
+        '''
+        very complex
+        ''' 
         pass
 
 class FunctionExpr(Expr):
@@ -100,45 +114,88 @@ class FunctionExpr(Expr):
                     state_=Expr("statement")):
         super().__init__(type_='functon', deps_=[func_declar_, state_])
 
-    def toStr():
-        pass
+    def toStr(self):
+        if not self.sub_expr:
+            self._indent_prefix = self.indent_level + self._indent_str
+        '''
+        very complex
+        ''' 
 
 class AssignExpr(Expr):
     def __init__(self, left_=Expr(), right_=Expr()):
         super().__init__(type_='assign_state', deps_=[left_, right_])
-   
-    def toStr():
-        pass
+
+    def toStr(self):
+        left_str = self.Deps[0].toStr()
+        right_str = self.Deps[1].toStr()
+        if not self.sub_expr:
+            self._indent_prefix = self._indent_str * self.indent_level
+            self._end = '\n'
+        return self._indent_prefix + left_str + ' = ' + right_str + self._end
 
 class UnaryExpr(Expr):
     def __init__(self, unary_opr_=str(), expr_=Expr()):
-        super().__init__(type_='unary_operaExpr', deps_=[expr_])
-        self._unary_opr = unary_opr_
+        super().__init__(type_='unary_operaExpr', deps_=[unary_opr_, expr_])
 
-    def toStr():
-        pass
+    def toStr(self):
+        unary_str = self.Deps[0]
+        expr_ = self.Deps[1]
+        assert isinstance(unary_str, str), 'unary opr need to be str type'
+        assert unary_str == '-' or unary_str == '~'
+        if unary_str == '~':
+            unary_str = '!'
 
+        if not self.sub_expr:
+            self._indent_prefix = self._indent_str * self.indent_level
+            self._end = '\n'
+        return self._indent_prefix + unary_str + expr_.toStr() + self._end
+        
 class BinaryExpr(Expr):
     def __init__(self, left_=Expr(), right_=Expr(), opr_=str()):
         super().__init__(type_='binaryExpr', name_=opr_, deps_=[left_, right_])
         self._opr = opr_
     
-    def toStr():
-        pass
+    def toStr(self):
+        assert len(self.Deps) == 2
+        left_str = self.Deps[0].toStr()
+        right_str = self.Deps[1].toStr()
+
+        if not self.sub_expr:
+            self._end = '\n'
+            self._indent_prefix = self._indent_str * self.indent_level
+
+        opr_str = self._opr
+        if opr_str == '~=':
+            opr_str = '!='
+
+        return left_str + ' ' + opr_str + ' ' + right_str + self._end
 
 class FunctionCallExpr(Expr):
     def __init__(self, name_=Expr(), paralist_=Expr()):
         super().__init__(type_='function_call', deps_=[name_, paralist_])
     
-    def toStr():
-        pass
+    def toStr(self):
+        assert(len(self.Deps) == 2)
+        func_name = self.Deps[0].toStr()
+        paralist = self.Deps[1].toStr()
+        if not self.sub_expr:
+            self._indent_prefix = self._indent_str * self.indent_level
+            self._end = '\n'
+                
+        return self._indent_prefix + func_name + '(' + paralist + ')' + self._end
+
 
 class ParentsExpr(Expr):
     def __init__(self, expr_=Expr()):
         super().__init__(type_='parentsExpr', deps_=expr_)
 
-    def toStr():
-        pass
+    def toStr(self):
+        expr_str = self.Deps[0].toStr()
+        if not self.sub_expr:
+            self._indent_prefix = self._indent_str * self.indent_level
+            self._end = '\n'
+        
+        return self._indent_prefix + '(' + expr_str + ')' + self._end
 
 class WhileExpr(Expr):
     def __init__(self, cond_=Expr(), com_=Expr()):
