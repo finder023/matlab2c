@@ -2,6 +2,26 @@
 
 from abc import ABCMeta, abstractmethod
 
+class HierarchicalCoding(object):
+    def __init__(self):
+        self.stack = list()
+        self.level = 0
+        self.addLevel()
+        self._indent_str = ' ' * 4
+
+    def addLevel(self):
+        self.level += 1
+        self.stack.append(1)
+
+    def addCoding(self):
+        self.stack[-1] += 1
+
+    def toStr(self):
+        return '.'.join(self.stack)
+    
+    def indentPrefix(self) :
+        return self._indent_str * self.level
+
 class Var(object):
     def __init__(self, name_=str(), type_=str()):
         self._name = name_ 
@@ -43,7 +63,7 @@ class Expr():
         # format
         self._indent_str = ' ' * 4
         # self._indent = '\t'
-        self.indent_level = 0
+        self.indent_level = HierarchicalCoding() 
         self.sub_expr = True 
         self._indent_prefix = str()
         self._end = ''
@@ -96,7 +116,12 @@ class Expr():
     
     def toStr(self):
         return 'Expr'
-   
+
+    def getIndentPrefix(self):
+        if not self.sub_expr:
+            self._indent_prefix = self.indent_level.indentPrefix()
+            self._end = '\n'
+
 # digit, truth_value, nameExpr, function call, 
 class NormalExpr(Expr):
     def __init__(self, type_=str(), name_=str(), var_list_=list(), deps_=list()):
@@ -115,8 +140,9 @@ class FunctionExpr(Expr):
         super().__init__(type_='functon', deps_=[func_declar_, state_])
 
     def toStr(self):
-        if not self.sub_expr:
-            self._indent_prefix = self.indent_level + self._indent_str
+
+        self.getIndentPrefix()
+
         '''
         very complex
         ''' 
@@ -128,9 +154,8 @@ class AssignExpr(Expr):
     def toStr(self):
         left_str = self.Deps[0].toStr()
         right_str = self.Deps[1].toStr()
-        if not self.sub_expr:
-            self._indent_prefix = self._indent_str * self.indent_level
-            self._end = '\n'
+
+        self.getIndentPrefix()
         return self._indent_prefix + left_str + ' = ' + right_str + self._end
 
 class UnaryExpr(Expr):
@@ -145,9 +170,8 @@ class UnaryExpr(Expr):
         if unary_str == '~':
             unary_str = '!'
 
-        if not self.sub_expr:
-            self._indent_prefix = self._indent_str * self.indent_level
-            self._end = '\n'
+        self.getIndentPrefix()
+
         return self._indent_prefix + unary_str + expr_.toStr() + self._end
         
 class BinaryExpr(Expr):
@@ -160,9 +184,7 @@ class BinaryExpr(Expr):
         left_str = self.Deps[0].toStr()
         right_str = self.Deps[1].toStr()
 
-        if not self.sub_expr:
-            self._end = '\n'
-            self._indent_prefix = self._indent_str * self.indent_level
+        self.getIndentPrefix()
 
         opr_str = self._opr
         if opr_str == '~=':
@@ -178,10 +200,9 @@ class FunctionCallExpr(Expr):
         assert(len(self.Deps) == 2)
         func_name = self.Deps[0].toStr()
         paralist = self.Deps[1].toStr()
-        if not self.sub_expr:
-            self._indent_prefix = self._indent_str * self.indent_level
-            self._end = '\n'
-                
+
+        self.getIndentPrefix()
+
         return self._indent_prefix + func_name + '(' + paralist + ')' + self._end
 
 
@@ -191,37 +212,86 @@ class ParentsExpr(Expr):
 
     def toStr(self):
         expr_str = self.Deps[0].toStr()
-        if not self.sub_expr:
-            self._indent_prefix = self._indent_str * self.indent_level
-            self._end = '\n'
-        
+
+        self.getIndentPrefix()
+
         return self._indent_prefix + '(' + expr_str + ')' + self._end
 
 class WhileExpr(Expr):
     def __init__(self, cond_=Expr(), com_=Expr()):
         super().__init__(type_='while_state', deps_=[cond_, com_])
 
-    def toStr():
-        pass
+    def toStr(self):
+        assert len(self.Deps) == 2
+        cond_expr = self.Deps[0]
+        com_expr = self.Deps[1]
+        cond_str = cond_expr.toStr()
+        com_str = com_expr.toStr()
+
+        self.getIndentPrefix()
+
+        res = self._indent_prefix + 'while( ' + cond_str
+        res += ') {\n' + com_str + '}\n'
+        return res + self._end
 
 class ElseIfExpr(Expr):
     def __init__(self, cond_=Expr(), com_=Expr()):
        super().__init__(type_='elseif_state', deps_=[cond_, com_])
     
-    def toStr():
-        pass
+    def toStr(self):
+        assert len(self.Deps) == 2
+
+        cond_expr = self.Deps[0]
+        com_expr = self.Deps[1]
+
+        cond_str = cond_expr.toStr()
+        com_str = com_expr.toStr()
+        self.getIndentPrefix()
+
+        res = self._indent_prefix + 'else if ( ' + cond_str
+        res += ') {\n' + com_str + '}\n'
+        return res + self._end
 
 class ElseExpr(Expr):
     def __init__(self, com_=Expr()):
         super().__init__(type_='else_state', deps_=[com_])
 
-    def toStr():
-        pass
+    def toStr(self):
+        assert len(self.Deps) == 1
+        com_expr = self.Deps[0]
+        com_str = com_expr.toStr()
+
+        self.getIndentPrefix()
+        
+        res = self._indent_prefix + 'else {\n'
+        res += com_str + '}\n'
+        return res + self._end
 
 
 class IfExpr(Expr):
     def __init__(self, expr_=Expr(), com_=Expr(), elseif_=Expr(), else_=Expr()):
         super().__init__(type_='if_state', deps_=[expr_, com_, elseif_, else_])
 
-    def toStr():
-        pass
+    def toStr(self):
+        assert len(self.Deps) == 4
+
+        if_cond_expr = self.Deps[0]
+        if_com_expr = self.Deps[1]
+        elseif_expr = self.Deps[2]
+        else_expr = self.Deps[3]
+
+        if_cond_str = if_cond_expr.toStr()
+        if_com_str = if_com_expr.toStr()
+        elseif_str = elseif_expr.toStr()
+        else_str = else_expr.toStr()
+
+        self.getIndentPrefix()
+
+        res = self.indent_level + 'if ( ' + if_cond_str
+        res += ' ) {\n' + if_com_str + '}\n'
+        
+        # NOTICE !!
+        res += elseif_str
+        res += else_str
+
+        return res + self._end
