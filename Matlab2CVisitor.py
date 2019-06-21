@@ -23,7 +23,7 @@ class Matlab2CVisitor(MatlabVisitor):
         self.para_list = list() 
         self.global_list = list()
         self.func_name = str()
-        
+        self.indent_level = HierarchicalCoding()
         self.__load_conf()
         
     
@@ -49,6 +49,7 @@ class Matlab2CVisitor(MatlabVisitor):
 
     def visitFunction_declare(self, ctx:MatlabParser.Function_declareContext):
         self.route.append('Function_declare')
+        self.indent_level.pushLevel()
         if self.log:
             print('->'.join(self.route))
             print('visit', self.route[-1], ':')
@@ -67,6 +68,9 @@ class Matlab2CVisitor(MatlabVisitor):
             # print('func_name:', self.func_name)
         
         self.route.pop()
+        self.indent_level.popLevel()
+        return FunctionDeclareExpr(returnparam_=ret_var, name_=self.func_name,
+                                    paralist_=self.para_list)
 
     def visitName(self, ctx:MatlabParser.NameContext):
         self.route.append('Name')
@@ -78,7 +82,7 @@ class Matlab2CVisitor(MatlabVisitor):
         if ctx.NAME():
             name_=ctx.NAME().getText()
         self.route.pop()
-        return NormalExpr('name', name_) 
+        return NormalExpr(type_='name', name_=name_, subexpr_=True) 
 
     def visitReturnparas(self, ctx:MatlabParser.ReturnparasContext):
         self.route.append('Returnparas')
@@ -93,17 +97,17 @@ class Matlab2CVisitor(MatlabVisitor):
                             self.all_var_type[var.getText()]))
             # print(var.getText())
         self.route.pop()
-        return NormalExpr(type_='returnparas', var_list_=ret_var) 
+        return NormalExpr(type_='returnparas', var_list_=ret_var, subexpr_=True) 
     
     def visitReturn_name(self, ctx:MatlabParser.Return_nameContext):
-        self.route.append('Returnparas')
+        self.route.append('ReturnName')
         if self.log:
             print('->'.join(self.route))
             print('visit', self.route[-1], ':')
         
         if ctx.NAME():
             var = Var(ctx.NAME().getText(), self.all_var_type[ctx.NAME().getText()])
-            return NormalExpr('return_name', [var])
+            return NormalExpr(type_='return_name', deps_=[var], subexpr_=True)
         
 
     def visitParalist(self, ctx:MatlabParser.ParalistContext):
@@ -117,7 +121,7 @@ class Matlab2CVisitor(MatlabVisitor):
         for _expr in ctx.expr():
             varlist.append(Var(_expr.getText(), self.all_var_type[_expr.getText()]))
         self.route.pop()
-        return NormalExpr(type_='paralist', var_list_=varlist) 
+        return NormalExpr(type_='paralist', var_list_=varlist, subexpr_=True) 
     
     def visitStatement(self, ctx:MatlabParser.StatementContext):
         self.route.append('Statement')
