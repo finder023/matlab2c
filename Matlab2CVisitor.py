@@ -21,7 +21,6 @@ class Matlab2CVisitor(MatlabVisitor):
         # return variable, must be pointer
         self.ret_var = list() 
         self.para_list = list() 
-        self.global_list = list()
         self.func_name = str()
         self.indent_level = HierarchicalCoding()
         self.__load_conf()
@@ -41,11 +40,19 @@ class Matlab2CVisitor(MatlabVisitor):
 
         if ctx.function_declare():
             func_declare = self.visitFunction_declare(ctx.function_declare())
-            # print(ctx.function_declare())
+            '''
+            function declare toStr pass!
+            print('func_declare: ', func_declare)
+            print(func_declare.toStr())
+            '''
+
         if ctx.statement():
             state = self.visitStatement(ctx.statement())
-            # print(ctx.statement().getText())
+            # print(state.toStr())
         self.route.pop()
+
+        return FunctionExpr(func_declar_=func_declare, state_=state)
+
 
     def visitFunction_declare(self, ctx:MatlabParser.Function_declareContext):
         self.route.append('Function_declare')
@@ -69,7 +76,7 @@ class Matlab2CVisitor(MatlabVisitor):
         
         self.route.pop()
         self.indent_level.popLevel()
-        return FunctionDeclareExpr(returnparam_=ret_var, name_=self.func_name,
+        return FunctionDeclareExpr(returnparas_=ret_var, name_=self.func_name,
                                     paralist_=self.para_list)
 
     def visitName(self, ctx:MatlabParser.NameContext):
@@ -128,13 +135,17 @@ class Matlab2CVisitor(MatlabVisitor):
         if self.log:
             print('->'.join(self.route))
             print('visit', self.route[-1], ':')
-        
+
+        global_list = NormalExpr() 
         if ctx.global_define_list():
-            self.global_list = self.visitGlobal_define_list(ctx.global_define_list())
-            print('global_list:', self.global_list)
-        
+            global_list = self.visitGlobal_define_list(ctx.global_define_list())
+            # print('global_list:', global_list)
+
+        com_state = NormalExpr()
         if ctx.com_statement():
-            self.visitCom_statement(ctx.com_statement())
+            com_state = self.visitCom_statement(ctx.com_statement())
+        
+        return NormalExpr(type_='statement', deps_=[global_list, com_state])
  
     def visitGlobal_define_list(self, ctx:MatlabParser.Global_define_listContext):
         self.route.append('Global_define_list')
@@ -155,7 +166,7 @@ class Matlab2CVisitor(MatlabVisitor):
             print('->'.join(self.route))
             print('visit', self.route[-1], ':')
         expr_list = list()
-        p = True 
+        p = False 
         for state in ctx:
             if state.assign_state():
                 expr_list.append(self.visitAssign_state(state.assign_state()))
@@ -164,12 +175,18 @@ class Matlab2CVisitor(MatlabVisitor):
                 expr_list.append(self.visitFunction_call(state.function_call()))
                 if p: print('###', expr_list[-1])
             if state.return_state():
+                expr_list.append(self.visitReturn_state(state.return_state()))
                 if p: print('###', 'return_state')
             if state.while_state():
-                if p: print('while_state')
+                expr_list.append(self.visitWhile_state(state.while_state()))
+                if p: print('### while_state')
             if state.if_state():
                 expr_list.append(self.visitIf_state(state.if_state()))
                 if p: print('###', expr_list[-1])
+            
+            if state.element_take():
+                print('ElemTake')
+                expr_list.append(self.visitElement_take(state.element_take()))
 
         self.route.pop()
         return NormalExpr(type_='com_statement', deps_=expr_list)
@@ -181,13 +198,55 @@ class Matlab2CVisitor(MatlabVisitor):
             print('visit', self.route[-1], ':')
 
         assert (len(ctx.expr()) == 2)
+        
         # print("assign: ", ctx.expr())
-        expr0 = self.visit(ctx.expr(0))
-        expr1 = self.visit(ctx.expr(1))
-        # print('###', expr0, '=', expr1)
- 
+        expr_list = list() 
+        for assign_expr in ctx.expr():
+            if isinstance(assign_expr, MatlabParser.NameExprContext):
+                expr_list.append(self.visitNameExpr(assign_expr))
+                assert expr_list[-1] is not None
+
+            elif isinstance(assign_expr, MatlabParser.Unary_operaExprContext):
+                expr_list.append(self.visitUnary_operaExpr(assign_expr))
+                assert expr_list[-1] is not None
+            
+            elif isinstance(assign_expr, MatlabParser.BinaryExprContext):
+                expr_list.append(self.visitBinaryExpr(assign_expr))
+                assert expr_list[-1] is not None
+
+            elif isinstance(assign_expr, MatlabParser.DigitExprContext):
+                expr_list.append(self.visitDigitExpr(assign_expr))
+                assert expr_list[-1] is not None
+
+            elif isinstance(assign_expr, MatlabParser.TruthExprContext):
+                expr_list.append(self.visitTruthExpr(assign_expr))
+                assert expr_list[-1] is not None
+            
+            elif isinstance(assign_expr, MatlabParser.RegExprContext):
+                expr_list.append(self.visitRegExpr(assign_expr))
+                assert expr_list[-1] is not None
+            
+            elif isinstance(assign_expr, MatlabParser.FuncallExprContext):
+                expr_list.append(self.visitFuncallExpr(assign_expr))
+                assert expr_list[-1] is not None
+
+            elif isinstance(assign_expr, MatlabParser.ElemExprContext):
+                expr_list.append(self.visitElemExpr(assign_expr))
+                assert expr_list[-1] is not None
+            
+            elif isinstance(assign_expr, MatlabParser.NullExprContext):
+                expr_list.append(self.visitNullExpr(assign_expr))
+                assert expr_list[-1] is not None
+            
+            elif isinstance(assign_expr, MatlabParser.StrExprContext):
+                expr_list.append(self.visitStrExpr(assign_expr))
+                assert expr_list[-1] is not None
+
+            else:
+                raise TypeError("Assign not supported type:", assign_expr)
+
         self.route.pop()
-        return AssignExpr(left_=expr0, right_=expr1)
+        return AssignExpr(left_=expr_list[0], right_=expr_list[1])
 
     def visitFunction_call(self, ctx:MatlabParser.Function_callContext):
         self.route.append('Function_call')
@@ -251,7 +310,7 @@ class Matlab2CVisitor(MatlabVisitor):
 
     # Visit a parse tree produced by MatlabParser#return_state.
     def visitReturn_state(self, ctx:MatlabParser.Return_stateContext):
-        return NormalExpr(_type='return_state') 
+        return NormalExpr(type_='return_state') 
     
     # Visit a parse tree produced by MatlabParser#nameExpr.
     def visitNameExpr(self, ctx:MatlabParser.NameExprContext):
@@ -287,11 +346,11 @@ class Matlab2CVisitor(MatlabVisitor):
 
         assert ctx.expr()
         if_cond_ = self.visit(ctx.expr())
-        print('if_cond_:', if_cond_) 
+        # print('if_cond_:', if_cond_) 
         if_state = list()
         if ctx.com_statement():
             if_state = self.visitCom_statement(ctx.com_statement())
-            print('if_state', ctx.com_statement()) 
+            # print('if_state', if_state) 
         elseif_state = None 
         if ctx.elseif_state():
             elseif_state = self.visitElseif_state(ctx.elseif_state())
@@ -329,3 +388,46 @@ class Matlab2CVisitor(MatlabVisitor):
     def visitContinue_state(self, ctx:MatlabParser.Continue_stateContext):
         return NormalExpr(type_='continue_state')
 
+    # Visit a parse tree produced by MatlabParser#nullExpr.
+    def visitNullExpr(self, ctx:MatlabParser.NullExprContext):
+        return NormalExpr(type_='nullExpr') 
+
+    # Visit a parse tree produced by MatlabParser#element_take.
+    def visitElement(self, ctx:MatlabParser.Element_takeContext):
+        self.route.append('ElementExpr')
+        if self.log:
+            print('->'.join(self.route))
+            print('visit', self.route[-1], ':')
+
+        name_, location_ = None, None
+        if ctx.name():
+            name_ = self.visitName(ctx.name())
+
+        if ctx.location():
+            location_ = self.visitLocation(ctx.location())
+         
+        self.route.pop()
+        return ElementExpr(name_=name_, location_=location_)
+
+
+    # Visit a parse tree produced by MatlabParser#location_name.
+    def visitLocation_name(self, ctx:MatlabParser.Location_nameContext):
+        if ctx.COLON():
+            return NormalExpr(type_='location_name', name_=':')
+        
+        if ctx.expr():
+            return self.visit(ctx.expr())
+
+
+    # Visit a parse tree produced by MatlabParser#location.
+    def visitLocation(self, ctx:MatlabParser.LocationContext):
+        self.route.append('LocationExpr')
+        if self.log:
+            print('->'.join(self.route))
+            print('visit', self.route[-1], ':')
+
+        location_name_list = list() 
+        for loc in ctx.location_name():
+            location_name_list.append(self.visitLocation_name(loc))
+
+        return NormalExpr(type_='location', deps_=location_name_list)

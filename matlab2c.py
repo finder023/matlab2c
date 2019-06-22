@@ -24,7 +24,10 @@ def main():
     tree = matlab_parser.function()
 
     cvtor = Matlab2CVisitor(log=args.log)
-    cvtor.visit(tree) 
+    func_expr = cvtor.visit(tree)
+
+    print(func_expr.toStr())
+
     if args.log:
         pass
 if __name__ == '__main__':
