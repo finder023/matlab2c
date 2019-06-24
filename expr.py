@@ -17,7 +17,7 @@ class HierarchicalCoding(object):
         self.level -= 1
         self.stack.pop()
 
-    def addCoding(self):
+    def addLevel(self):
         self.stack[-1] += 1
 
     def toStr(self):
@@ -241,12 +241,13 @@ class FunctionDeclareExpr(Expr):
         super().__init__(type_='function_declare', 
                             deps_=[returnparas_, name_, paralist_])
         self.sub_expr = subexpr_
-        self.indent_level = HierarchicalCoding() 
+        self.indent_level = indent_
 
     def toStr(self):
         assert len(self.Deps) == 3
 
-        self.getIndentPrefix()
+        if not self.sub_expr:
+            self.getIndentPrefix()
 
         returnparas_expr = self.Deps[0]
         name_expr = self.Deps[1]
@@ -276,7 +277,7 @@ class FunctionDeclareExpr(Expr):
 
 class FunctionExpr(Expr):
     def __init__(self, func_declar_=Expr("functoin"), state_=Expr("statement"), 
-                    subexpr_=True, indent_=HierarchicalCoding()):
+                    subexpr_=False, indent_=HierarchicalCoding()):
         super().__init__(type_='functon', deps_=[func_declar_, state_])
         self.sub_expr = subexpr_ 
         self.indent_level =  indent_
@@ -513,11 +514,14 @@ class IfExpr(Expr):
 
         if else_expr is not None:
             else_str = else_expr.toStr()
-
-        self.getIndentPrefix()
+        
+        if not self.sub_expr:
+            self.getIndentPrefix()
+        
+        # print('if indent level:', self.indent_level.level)
 
         res = self._indent_prefix + 'if ( ' + if_cond_str
-        res += ' ) {\n' + if_com_str + '}\n'
+        res += ' ) {\n' + if_com_str + self._indent_prefix + '}\n'
         
         # NOTICE !!
         res += elseif_str

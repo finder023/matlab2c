@@ -3,7 +3,7 @@
 from antlr4 import *
 import json
 from expr import *
-        
+from copy import copy
 
 if __name__ is not None and "." in __name__:
     from .MatlabParser import MatlabParser
@@ -51,12 +51,13 @@ class Matlab2CVisitor(MatlabVisitor):
             # print(state.toStr())
         self.route.pop()
 
-        return FunctionExpr(func_declar_=func_declare, state_=state)
+        # visit tree started node
+        return FunctionExpr(func_declar_=func_declare, state_=state, 
+                    subexpr_=False, indent_=HierarchicalCoding())
 
 
     def visitFunction_declare(self, ctx:MatlabParser.Function_declareContext):
         self.route.append('Function_declare')
-        self.indent_level.pushLevel()
         if self.log:
             print('->'.join(self.route))
             print('visit', self.route[-1], ':')
@@ -75,9 +76,11 @@ class Matlab2CVisitor(MatlabVisitor):
             # print('func_name:', self.func_name)
         
         self.route.pop()
-        self.indent_level.popLevel()
-        return FunctionDeclareExpr(returnparas_=ret_var, name_=self.func_name,
-                                    paralist_=self.para_list)
+        _expr = FunctionDeclareExpr(returnparas_=ret_var, name_=self.func_name,
+                paralist_=self.para_list, subexpr_=False, 
+                indent_=self.indent_level)
+        self.indent_level.pushLevel()
+        return _expr
 
     def visitName(self, ctx:MatlabParser.NameContext):
         self.route.append('Name')
@@ -145,20 +148,24 @@ class Matlab2CVisitor(MatlabVisitor):
         if ctx.com_statement():
             com_state = self.visitCom_statement(ctx.com_statement())
         
-        return NormalExpr(type_='statement', deps_=[global_list, com_state])
+        return NormalExpr(type_='statement', deps_=[global_list, com_state],
+                            subexpr_=True)
  
     def visitGlobal_define_list(self, ctx:MatlabParser.Global_define_listContext):
         self.route.append('Global_define_list')
         if self.log:
             print('->'.join(self.route))
             print('visit', self.route[-1], ':')
- 
+
         global_name = list()
         for name in ctx.name():
             global_name.append(Var(name.getText(), self.all_var_type[name.getText()]))
         self.route.pop()
 
-        return NormalExpr(type_='global_define_list', var_list_=global_name)
+        self.indent_level.addLevel()
+        _expr = NormalExpr(type_='global_define_list', var_list_=global_name, 
+                    subexpr_=False, indent_=self.indent_level)
+        return _expr
 
     def visitCom_statement(self, ctx:MatlabParser.Com_statementContext):
         self.route.append('Com_statement')
@@ -189,7 +196,8 @@ class Matlab2CVisitor(MatlabVisitor):
                 expr_list.append(self.visitElement_take(state.element_take()))
 
         self.route.pop()
-        return NormalExpr(type_='com_statement', deps_=expr_list)
+        return NormalExpr(type_='com_statement', deps_=expr_list, 
+                subexpr_=False, indent_=copy(self.indent_level))
 
     def visitAssign_state(self, ctx:MatlabParser.Assign_stateContext):
         self.route.append('Assign_state')
@@ -200,7 +208,10 @@ class Matlab2CVisitor(MatlabVisitor):
         assert (len(ctx.expr()) == 2)
         
         # print("assign: ", ctx.expr())
-        expr_list = list() 
+
+        self.indent_level.addLevel()
+
+        expr_list = list()
         for assign_expr in ctx.expr():
             if isinstance(assign_expr, MatlabParser.NameExprContext):
                 expr_list.append(self.visitNameExpr(assign_expr))
@@ -227,7 +238,9 @@ class Matlab2CVisitor(MatlabVisitor):
                 assert expr_list[-1] is not None
             
             elif isinstance(assign_expr, MatlabParser.FuncallExprContext):
-                expr_list.append(self.visitFuncallExpr(assign_expr))
+                func_expr = self.visitFuncallExpr(assign_expr)
+                func_expr.sub_expr = True
+                expr_list.append(func_expr)
                 assert expr_list[-1] is not None
 
             elif isinstance(assign_expr, MatlabParser.ElemExprContext):
@@ -246,7 +259,8 @@ class Matlab2CVisitor(MatlabVisitor):
                 raise TypeError("Assign not supported type:", assign_expr)
 
         self.route.pop()
-        return AssignExpr(left_=expr_list[0], right_=expr_list[1])
+        return AssignExpr(left_=expr_list[0], right_=expr_list[1], 
+                subexpr_=False, indent_=copy(self.indent_level))
 
     def visitFunction_call(self, ctx:MatlabParser.Function_callContext):
         self.route.append('Function_call')
@@ -261,7 +275,8 @@ class Matlab2CVisitor(MatlabVisitor):
             para_list = self.visitParalist(ctx.paralist())
 
         self.route.pop()
-        return FunctionCallExpr(name_=name, paralist_=para_list)
+        return FunctionCallExpr(name_=name, paralist_=para_list, 
+                    subexpr_=True)
 
     # Visit a parse tree produced by MatlabParser#binaryExpr.
     def visitBinaryExpr(self, ctx:MatlabParser.BinaryExprContext):
@@ -310,7 +325,8 @@ class Matlab2CVisitor(MatlabVisitor):
 
     # Visit a parse tree produced by MatlabParser#return_state.
     def visitReturn_state(self, ctx:MatlabParser.Return_stateContext):
-        return NormalExpr(type_='return_state') 
+        return NormalExpr(type_='return_state', subexpr_=False, 
+                    indent_=copy(self.indent_level)) 
     
     # Visit a parse tree produced by MatlabParser#nameExpr.
     def visitNameExpr(self, ctx:MatlabParser.NameExprContext):
@@ -331,10 +347,13 @@ class Matlab2CVisitor(MatlabVisitor):
             _cond = self.visit(ctx.expr())
         
         if ctx.com_statement():
+            self.indent_level.pushLevel()
             _com = self.visitCom_statement(ctx.com_statement())
+            self.indent_level.popLevel()
 
         self.route.pop()
-        return WhileExpr(cond_=_cond, com_=_com)
+        expr_ = WhileExpr(cond_=_cond, com_=_com, indent_=self.indent_level)
+        return expr_
 
 
     # Visit a parse tree produced by MatlabParser#if_state.
@@ -349,7 +368,9 @@ class Matlab2CVisitor(MatlabVisitor):
         # print('if_cond_:', if_cond_) 
         if_state = list()
         if ctx.com_statement():
+            self.indent_level.pushLevel()
             if_state = self.visitCom_statement(ctx.com_statement())
+            self.indent_level.popLevel()
             # print('if_state', if_state) 
         elseif_state = None 
         if ctx.elseif_state():
@@ -357,11 +378,15 @@ class Matlab2CVisitor(MatlabVisitor):
 
         else_state = None 
         if ctx.else_state():
+            self.indent_level.pushLevel()
             else_state = self.visitElse_state(ctx.else_state())
+            self.indent_level.popLevel()
         self.route.pop()
-
-        return IfExpr(expr_=if_cond_, com_=if_state, elseif_=elseif_state, 
-                        else_=else_state) 
+        print('if out indent level:', self.indent_level.level)
+        expr_ = IfExpr(expr_=if_cond_, com_=if_state, elseif_=elseif_state, 
+                        else_=else_state, indent_=copy(self.indent_level), 
+                        subexpr_=False) 
+        return expr_
 
     # Visit a parse tree produced by MatlabParser#elseif_state.
     def visitElseif_state(self, ctx:MatlabParser.Elseif_stateContext):
@@ -369,24 +394,30 @@ class Matlab2CVisitor(MatlabVisitor):
         elseif_cond_ = self.visit(ctx.expr())
         elseif_state_ = list()
         if ctx.com_statement():
+            self.indent_level.pushLevel()
             elseif_state = self.visitCom_statement(ctx.com_statement())
-        
+            self.indent_level.popLevel()
+
         return ElseIfExpr(cond_=elseif_cond_, com_=elseif_state_)
 
     # Visit a parse tree produced by MatlabParser#else_state.
     def visitElse_state(self, ctx:MatlabParser.Else_stateContext):
         if ctx.com_statement():
+            self.indent_level.pushLevel()
             else_state_ = self.visitCom_statement(ctx.com_statement())
+            self.indent_level.popLevel()
 
         return ElseExpr(com_=else_state_)
 
     # Visit a parse tree produced by MatlabParser#break_state.
     def visitBreak_state(self, ctx:MatlabParser.Break_stateContext):
-        return NormalExpr(type_='break_state')
+        return NormalExpr(type_='break_state', subexpr_=False,
+                    indent_=copy(self.indent_level))
 
     # Visit a parse tree produced by MatlabParser#continue_state.
     def visitContinue_state(self, ctx:MatlabParser.Continue_stateContext):
-        return NormalExpr(type_='continue_state')
+        return NormalExpr(type_='continue_state', subexpr_=False,
+                    indent_=copy(self.indent_level))
 
     # Visit a parse tree produced by MatlabParser#nullExpr.
     def visitNullExpr(self, ctx:MatlabParser.NullExprContext):
