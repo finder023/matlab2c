@@ -3,7 +3,7 @@
 from antlr4 import *
 import json
 from expr import *
-from copy import copy
+from copy import deepcopy
 
 if __name__ is not None and "." in __name__:
     from .MatlabParser import MatlabParser
@@ -14,22 +14,20 @@ else:
 
 
 class Matlab2CVisitor(MatlabVisitor):
-    def __init__(self, log:bool = False):
+    def __init__(self, log:bool = False,
+            func_type_path:str = str()):
         self.all_var_type = dict()
+        self.func_rtype_path = func_type_path 
         self.log = log
         self.route = list() 
         # return variable, must be pointer
-        self.ret_var = list() 
-        self.para_list = list() 
-        self.func_name = str()
         self.indent_level = HierarchicalCoding()
+        self.print_coding = False
         self.__load_conf()
         
     
     def __load_conf(self):
-        func_rtype_path = './mxx/create_semaphore_type.json'
-
-        with open(func_rtype_path, 'r') as f:
+        with open(self.func_rtype_path, 'r') as f:
             self.all_var_type = json.load(f)
 
     def visitFunction(self, ctx:MatlabParser.FunctionContext):
@@ -68,17 +66,17 @@ class Matlab2CVisitor(MatlabVisitor):
             # print('ret_val:', ret_var)
         # visit paralist
         if ctx.paralist():
-            self.para_list = self.visitParalist(ctx.paralist())
+            para_list = self.visitParalist(ctx.paralist())
             # print('para_list:', self.para_list)
         # visit name
         if ctx.name():
-            self.func_name = self.visitName(ctx.name())
+            func_name = self.visitName(ctx.name())
             # print('func_name:', self.func_name)
         
         self.route.pop()
-        _expr = FunctionDeclareExpr(returnparas_=ret_var, name_=self.func_name,
-                paralist_=self.para_list, subexpr_=False, 
-                indent_=self.indent_level)
+        _expr = FunctionDeclareExpr(returnparas_=ret_var, name_=func_name,
+                paralist_=para_list, subexpr_=False, 
+                indent_=deepcopy(self.indent_level))
         self.indent_level.pushLevel()
         return _expr
 
@@ -114,11 +112,13 @@ class Matlab2CVisitor(MatlabVisitor):
         if self.log:
             print('->'.join(self.route))
             print('visit', self.route[-1], ':')
-        
+
+        var = None 
         if ctx.NAME():
             var = Var(ctx.NAME().getText(), self.all_var_type[ctx.NAME().getText()])
-            return NormalExpr(type_='return_name', deps_=[var], subexpr_=True)
         
+        self.route.pop()
+        return NormalExpr(type_='return_name', deps_=[var], subexpr_=True)
 
     def visitParalist(self, ctx:MatlabParser.ParalistContext):
         self.route.append('Paralist')
@@ -139,15 +139,16 @@ class Matlab2CVisitor(MatlabVisitor):
             print('->'.join(self.route))
             print('visit', self.route[-1], ':')
 
-        global_list = NormalExpr() 
+        global_list = None 
         if ctx.global_define_list():
             global_list = self.visitGlobal_define_list(ctx.global_define_list())
             # print('global_list:', global_list)
 
-        com_state = NormalExpr()
+        com_state = None
         if ctx.com_statement():
             com_state = self.visitCom_statement(ctx.com_statement())
-        
+
+        self.route.pop() 
         return NormalExpr(type_='statement', deps_=[global_list, com_state],
                             subexpr_=True)
  
@@ -164,7 +165,7 @@ class Matlab2CVisitor(MatlabVisitor):
 
         self.indent_level.addLevel()
         _expr = NormalExpr(type_='global_define_list', var_list_=global_name, 
-                    subexpr_=False, indent_=self.indent_level)
+                    subexpr_=False, indent_=deepcopy(self.indent_level))
         return _expr
 
     def visitCom_statement(self, ctx:MatlabParser.Com_statementContext):
@@ -175,29 +176,52 @@ class Matlab2CVisitor(MatlabVisitor):
         expr_list = list()
         p = False 
         for state in ctx:
+            self.indent_level.addLevel()
+            # print('hcoding:', self.indent_level.stack)
             if state.assign_state():
-                expr_list.append(self.visitAssign_state(state.assign_state()))
+                com_state = self.visitAssign_state(state.assign_state())
+                com_state.indent_level = deepcopy(self.indent_level)
+                com_state.sub_expr = False
+                expr_list.append(com_state)
                 if p: print('###', expr_list[-1]) 
+
             if state.function_call():
-                expr_list.append(self.visitFunction_call(state.function_call()))
+                com_state = self.visitFunction_call(state.function_call())
+                com_state.indent_level = deepcopy(self.indent_level)
+                com_state.sub_expr = False
+                expr_list.append(com_state)
                 if p: print('###', expr_list[-1])
+
             if state.return_state():
-                expr_list.append(self.visitReturn_state(state.return_state()))
+                com_state = self.visitReturn_state(state.return_state())
+                com_state.indent_level = deepcopy(self.indent_level)
+                com_state.sub_expr = False
+                expr_list.append(com_state)
                 if p: print('###', 'return_state')
+
             if state.while_state():
-                expr_list.append(self.visitWhile_state(state.while_state()))
+                com_state = self.visitWhile_state(state.while_state())
+                com_state.indent_level = deepcopy(self.indent_level)
+                com_state.sub_expr = False
+                expr_list.append(com_state)
                 if p: print('### while_state')
+
             if state.if_state():
-                expr_list.append(self.visitIf_state(state.if_state()))
+                com_state = self.visitIf_state(state.if_state())
+                com_state.indent_level = deepcopy(self.indent_level)
+                com_state.sub_expr = False
+                expr_list.append(com_state)
                 if p: print('###', expr_list[-1])
             
             if state.element_take():
-                print('ElemTake')
-                expr_list.append(self.visitElement_take(state.element_take()))
+                com_state = self.visitElement_take(state.element_take())
+                com_state.indent_level = deepcopy(self.indent_level)
+                com_state.sub_expr = False
+                expr_list.append(com_state)
 
         self.route.pop()
         return NormalExpr(type_='com_statement', deps_=expr_list, 
-                subexpr_=False, indent_=copy(self.indent_level))
+                subexpr_=False, indent_=deepcopy(self.indent_level))
 
     def visitAssign_state(self, ctx:MatlabParser.Assign_stateContext):
         self.route.append('Assign_state')
@@ -208,8 +232,6 @@ class Matlab2CVisitor(MatlabVisitor):
         assert (len(ctx.expr()) == 2)
         
         # print("assign: ", ctx.expr())
-
-        self.indent_level.addLevel()
 
         expr_list = list()
         for assign_expr in ctx.expr():
@@ -260,7 +282,7 @@ class Matlab2CVisitor(MatlabVisitor):
 
         self.route.pop()
         return AssignExpr(left_=expr_list[0], right_=expr_list[1], 
-                subexpr_=False, indent_=copy(self.indent_level))
+                subexpr_=False, indent_=deepcopy(self.indent_level))
 
     def visitFunction_call(self, ctx:MatlabParser.Function_callContext):
         self.route.append('Function_call')
@@ -326,7 +348,7 @@ class Matlab2CVisitor(MatlabVisitor):
     # Visit a parse tree produced by MatlabParser#return_state.
     def visitReturn_state(self, ctx:MatlabParser.Return_stateContext):
         return NormalExpr(type_='return_state', subexpr_=False, 
-                    indent_=copy(self.indent_level)) 
+                    indent_=deepcopy(self.indent_level)) 
     
     # Visit a parse tree produced by MatlabParser#nameExpr.
     def visitNameExpr(self, ctx:MatlabParser.NameExprContext):
@@ -352,7 +374,8 @@ class Matlab2CVisitor(MatlabVisitor):
             self.indent_level.popLevel()
 
         self.route.pop()
-        expr_ = WhileExpr(cond_=_cond, com_=_com, indent_=self.indent_level)
+        expr_ = WhileExpr(cond_=_cond, com_=_com, 
+                subexpr_=False, indent_=deepcopy(self.indent_level))
         return expr_
 
 
@@ -382,9 +405,9 @@ class Matlab2CVisitor(MatlabVisitor):
             else_state = self.visitElse_state(ctx.else_state())
             self.indent_level.popLevel()
         self.route.pop()
-        print('if out indent level:', self.indent_level.level)
+        # print('if out indent level:', self.indent_level.level)
         expr_ = IfExpr(expr_=if_cond_, com_=if_state, elseif_=elseif_state, 
-                        else_=else_state, indent_=copy(self.indent_level), 
+                        else_=else_state, indent_=deepcopy(self.indent_level), 
                         subexpr_=False) 
         return expr_
 
@@ -412,12 +435,12 @@ class Matlab2CVisitor(MatlabVisitor):
     # Visit a parse tree produced by MatlabParser#break_state.
     def visitBreak_state(self, ctx:MatlabParser.Break_stateContext):
         return NormalExpr(type_='break_state', subexpr_=False,
-                    indent_=copy(self.indent_level))
+                    indent_=deepcopy(self.indent_level))
 
     # Visit a parse tree produced by MatlabParser#continue_state.
     def visitContinue_state(self, ctx:MatlabParser.Continue_stateContext):
         return NormalExpr(type_='continue_state', subexpr_=False,
-                    indent_=copy(self.indent_level))
+                    indent_=deepcopy(self.indent_level))
 
     # Visit a parse tree produced by MatlabParser#nullExpr.
     def visitNullExpr(self, ctx:MatlabParser.NullExprContext):

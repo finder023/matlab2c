@@ -1,6 +1,9 @@
 #! /usr/bin/env python3
 
 from abc import ABCMeta, abstractmethod
+from copy import copy
+
+from conf import with_hcoding
 
 class HierarchicalCoding(object):
     def __init__(self):
@@ -11,7 +14,7 @@ class HierarchicalCoding(object):
 
     def pushLevel(self):
         self.level += 1
-        self.stack.append(1)
+        self.stack.append(0)
 
     def popLevel(self):
         self.level -= 1
@@ -124,7 +127,11 @@ class Expr():
     def getIndentPrefix(self):
         if not self.sub_expr:
             self._indent_prefix = self.indent_level.indentPrefix()
-            self._end = '\n'
+            if with_hcoding:
+                self._end = ' ' * 8 + '// '
+                self._end += '.'.join(str(i) for i in self.indent_level.stack) + '\n' 
+            else:
+                self._end = '\n'
 
 # digit, truth_value, nameExpr, 
 class NormalExpr(Expr):
@@ -166,7 +173,7 @@ class NormalExpr(Expr):
 
             res = self._indent_prefix
             res += (';\n' + self._indent_prefix).join(global_var_list)
-            return res + ';\n'
+            return res + ';' + self._end
             
         elif self.Type == 'com_statement':
             if len(self.Deps) == 0:
@@ -185,17 +192,17 @@ class NormalExpr(Expr):
         elif self.Type == 'return_state':
             if not self.sub_expr:
                 self.getIndentPrefix()
-            return self._indent_prefix + 'return;\n'
+            return self._indent_prefix + 'return;' + self._end
             
         elif self.Type == 'break_state':
             if not self.sub_expr:
                 self.getIndentPrefix()
-            return self._indent_prefix + 'break;\n'
+            return self._indent_prefix + 'break;' + self._end
 
         elif self.Type == 'continue_state':
             if not self.sub_expr:
                 self.getIndentPrefix()
-            return self._indent_prefix + 'continue;\n'
+            return self._indent_prefix + 'continue;' + self._end
 
         elif self.Type == 'statement':
             if not self.sub_expr:
@@ -210,8 +217,8 @@ class NormalExpr(Expr):
             # print("Gloabal_str:\n", global_str)
             statement_str = statement_expr.toStr()
 
-            res = global_str + '\n\n'
-            res += statement_str + '\n'
+            res = global_str + '\n'
+            res += statement_str
             return res
 
         elif self.Type == 'nameExpr':
@@ -293,9 +300,9 @@ class FunctionExpr(Expr):
         func_str = func_expr.toStr()
         state_str = state_expr.toStr()
 
-        res = self._indent_prefix + func_str + ' {\n'
-        res += state_str + '}\n'
-        return res + self._end
+        res = self._indent_prefix + func_str + ' {\n\n'
+        res += state_str + '}'
+        return res + self._end + '\n'
 
 class AssignExpr(Expr):
     def __init__(self, left_=Expr(), right_=Expr(), subexpr_=False,
@@ -434,7 +441,7 @@ class WhileExpr(Expr):
             self.getIndentPrefix()
 
         res = self._indent_prefix + 'while( ' + cond_str
-        res += ') {\n' + com_str + '}\n'
+        res += ') {\n' + com_str + self._indent_prefix + '}'
         return res + self._end
 
 class ElseIfExpr(Expr):
@@ -462,7 +469,7 @@ class ElseIfExpr(Expr):
             self.getIndentPrefix()
 
         res = self._indent_prefix + 'else if ( ' + cond_str
-        res += ') {\n' + com_str + '}\n'
+        res += ') {\n' + com_str + self._indent_prefix + '}'
         return res + self._end
 
 class ElseExpr(Expr):
@@ -483,7 +490,7 @@ class ElseExpr(Expr):
         self.getIndentPrefix()
         
         res = self._indent_prefix + 'else {\n'
-        res += com_str + '}\n'
+        res += com_str + self._indent_prefix + '}'
         return res + self._end
 
 
@@ -521,7 +528,7 @@ class IfExpr(Expr):
         # print('if indent level:', self.indent_level.level)
 
         res = self._indent_prefix + 'if ( ' + if_cond_str
-        res += ' ) {\n' + if_com_str + self._indent_prefix + '}\n'
+        res += ' ) {\n' + if_com_str + self._indent_prefix + '}'
         
         # NOTICE !!
         res += elseif_str

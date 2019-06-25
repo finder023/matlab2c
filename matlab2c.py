@@ -11,19 +11,19 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--log', dest='log', action='store_true', help='whether print visitor info')
-parser.add_argument('-i', '--input', dest='input', required=True, help='input file')
 args = parser.parse_args()
 
+from conf import mstar_path, mtype_path
 
 def main():
-    instream = FileStream(args.input)
+    instream = FileStream(mstar_path)
     matlab_lexer = MatlabLexer(instream)
     token_stream = CommonTokenStream(matlab_lexer)
     matlab_parser = MatlabParser(token_stream)
     
     tree = matlab_parser.function()
 
-    cvtor = Matlab2CVisitor(log=args.log)
+    cvtor = Matlab2CVisitor(log=args.log, func_type_path=mtype_path)
     func_expr = cvtor.visit(tree)
 
     print(func_expr.toStr())
