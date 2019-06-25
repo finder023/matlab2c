@@ -44,21 +44,6 @@ class MatlabVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by MatlabParser#definemark.
-    def visitDefinemark(self, ctx:MatlabParser.DefinemarkContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#typedef.
-    def visitTypedef(self, ctx:MatlabParser.TypedefContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by MatlabParser#ruledef.
-    def visitRuledef(self, ctx:MatlabParser.RuledefContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by MatlabParser#nameplus.
     def visitNameplus(self, ctx:MatlabParser.NameplusContext):
         return self.visitChildren(ctx)

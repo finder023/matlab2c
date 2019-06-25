@@ -28,11 +28,11 @@ return_name : NAME|NOT ;
 
 name : NAME;
 
-definemark : DEFINEMARK ;
+// definemark : DEFINEMARK ;
 
-typedef : definemark cate name (COMMA name)* | definemark cate nameplus ;
+// typedef : definemark cate name (COMMA name)* | definemark cate nameplus ;
 
-ruledef : definemark name ;
+// ruledef : definemark name ;
 
 nameplus : NAMEPLUS ;
 
@@ -91,8 +91,8 @@ com_statement:
     | element_delete_state SEMICOLON
     | element_ismember_set SEMICOLON
     | element_take SEMICOLON
-    | typedef SEMICOLON
-    | ruledef
+//    | typedef SEMICOLON
+//    | ruledef
     ;
     
 assign_state:
@@ -108,7 +108,7 @@ while_state:
     WHILE expr (com_statement)* END ;
 
 if_state:
-        IF expr (com_statement)* (elseif_state)* (else_state)? END ;
+        IF LEFTPAREN? expr RIGHTPAREN? (com_statement)* (elseif_state)* (else_state)? END ;
 
 elseif_state:
         ELSEIF expr (com_statement)* ;
@@ -134,6 +134,7 @@ element_ismember_set:
 element_take:
         name ASSIGN LEFTBRACKET element RIGHTBRACKET
         | name ASSIGN LEFTBRACE element RIGHTBRACE ;
+
 
 /*
  * Lexer Rules
@@ -183,7 +184,9 @@ DOT : '.' ;
 COLON : ':' ;
 QUOTE : '\'' ;
 DOUBLEQUOTE : '"';
-DEFINEMARK : '%' ;
+NL : ('\r' '\n' | '\r' | '\n') -> channel(HIDDEN);
+// DEFINEMARK : '%' ;
+COMMENT	: '%' .*? NL -> channel(HIDDEN);
 
 NAME : LETTER(CHARACTER)* ;
 NAMEPLUS : NAME LEFTBRACKET NAME RIGHTBRACKET | NAME LEFTBRACKET NAME RIGHTBRACKET LEFTBRACKET NAME RIGHTBRACKET ;

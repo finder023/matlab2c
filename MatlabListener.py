@@ -71,33 +71,6 @@ class MatlabListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by MatlabParser#definemark.
-    def enterDefinemark(self, ctx:MatlabParser.DefinemarkContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#definemark.
-    def exitDefinemark(self, ctx:MatlabParser.DefinemarkContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#typedef.
-    def enterTypedef(self, ctx:MatlabParser.TypedefContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#typedef.
-    def exitTypedef(self, ctx:MatlabParser.TypedefContext):
-        pass
-
-
-    # Enter a parse tree produced by MatlabParser#ruledef.
-    def enterRuledef(self, ctx:MatlabParser.RuledefContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#ruledef.
-    def exitRuledef(self, ctx:MatlabParser.RuledefContext):
-        pass
-
-
     # Enter a parse tree produced by MatlabParser#nameplus.
     def enterNameplus(self, ctx:MatlabParser.NameplusContext):
         pass

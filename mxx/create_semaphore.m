@@ -29,7 +29,6 @@ function  [semaphore_id,return_code] = create_semphore( semaphore_name,current_v
     sem_ptr.sem_status.current_value = current_value;
     sem_ptr.sem_status.max_value = max_value;
     sem_ptr.sem_status.waiting_process = 0;
-
     
     sem_record{sem_ptr.sem_id, 1} = sem_ptr;
     sem_num = sem_num + 1;
