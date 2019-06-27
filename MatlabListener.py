@@ -53,15 +53,6 @@ class MatlabListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by MatlabParser#return_name.
-    def enterReturn_name(self, ctx:MatlabParser.Return_nameContext):
-        pass
-
-    # Exit a parse tree produced by MatlabParser#return_name.
-    def exitReturn_name(self, ctx:MatlabParser.Return_nameContext):
-        pass
-
-
     # Enter a parse tree produced by MatlabParser#name.
     def enterName(self, ctx:MatlabParser.NameContext):
         pass

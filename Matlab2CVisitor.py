@@ -63,11 +63,12 @@ class Matlab2CVisitor(MatlabVisitor):
         # visit return_params 
         if ctx.returnparas():
             ret_var = self.visitReturnparas(ctx.returnparas())
-            # print('ret_val:', ret_var)
+            # something wrong
+            # print('ret_val:', ret_var.Vars)
         # visit paralist
         if ctx.paralist():
             para_list = self.visitParalist(ctx.paralist())
-            # print('para_list:', self.para_list)
+            # print('para_list:', para_list)
         # visit name
         if ctx.name():
             func_name = self.visitName(ctx.name())
@@ -90,7 +91,24 @@ class Matlab2CVisitor(MatlabVisitor):
         if ctx.NAME():
             name_=ctx.NAME().getText()
         self.route.pop()
-        return NormalExpr(type_='name', name_=name_, subexpr_=True) 
+        
+        var_ = Var(name_=name_)
+        
+        if var_.Name in self.all_var_type:
+            var_.Type = self.all_var_type[var_.Name]
+
+        elif var_.Name.upper() == var_.Name:
+            var_.Type = 'marco'
+            self.all_var_type[var_.Name] = var_.Type
+        
+        else:
+            var_.Type = 'unknowType'
+            self.all_var_type[var_.Name] = var_.Type
+        # print('outsideVars:', var_)
+        expr = NormalExpr(type_='name', name_=name_, subexpr_=True,
+                            vars_=[var_]) 
+        return expr
+        
 
     def visitReturnparas(self, ctx:MatlabParser.ReturnparasContext):
         self.route.append('Returnparas')
@@ -100,25 +118,16 @@ class Matlab2CVisitor(MatlabVisitor):
         # print(len(ctx.return_name()))
 
         ret_var = list()
-        for var in ctx.return_name():
-            ret_var.append(Var(var.getText(), 
-                            self.all_var_type[var.getText()]))
+        for name in ctx.name():
+            ret_name = self.visitName(name)
+            ret_var.append(ret_name)
             # print(var.getText())
         self.route.pop()
-        return NormalExpr(type_='returnparas', var_list_=ret_var, subexpr_=True) 
-    
-    def visitReturn_name(self, ctx:MatlabParser.Return_nameContext):
-        self.route.append('ReturnName')
-        if self.log:
-            print('->'.join(self.route))
-            print('visit', self.route[-1], ':')
+        # print('bnexpr:', ret_var[0]._vars)
+        nexpr = NormalExpr(type_='returnparas', deps_=ret_var, subexpr_=True) 
+        # print('nexpr:', nexpr._vars)
+        return nexpr    
 
-        var = None 
-        if ctx.NAME():
-            var = Var(ctx.NAME().getText(), self.all_var_type[ctx.NAME().getText()])
-        
-        self.route.pop()
-        return NormalExpr(type_='return_name', deps_=[var], subexpr_=True)
 
     def visitParalist(self, ctx:MatlabParser.ParalistContext):
         self.route.append('Paralist')
@@ -129,9 +138,16 @@ class Matlab2CVisitor(MatlabVisitor):
         # print(len(ctx.expr()))
         varlist = list()
         for _expr in ctx.expr():
-            varlist.append(Var(_expr.getText(), self.all_var_type[_expr.getText()]))
+            var_ = Var(name_=_expr.getText(),
+                    type_=self.all_var_type[_expr.getText()])
+
+            expr_ = NormalExpr(type_='name', name_=var_.Name,
+                        vars_=[var_], subexpr_=True)
+            varlist.append(expr_)
+
         self.route.pop()
-        return NormalExpr(type_='paralist', var_list_=varlist, subexpr_=True) 
+        return NormalExpr(type_='paralist', vars_=deepcopy(varlist),
+                            subexpr_=True, deps_=varlist) 
     
     def visitStatement(self, ctx:MatlabParser.StatementContext):
         self.route.append('Statement')
@@ -152,7 +168,8 @@ class Matlab2CVisitor(MatlabVisitor):
         return NormalExpr(type_='statement', deps_=[global_list, com_state],
                             subexpr_=True)
  
-    def visitGlobal_define_list(self, ctx:MatlabParser.Global_define_listContext):
+    def visitGlobal_define_list(self,
+                ctx:MatlabParser.Global_define_listContext):
         self.route.append('Global_define_list')
         if self.log:
             print('->'.join(self.route))
@@ -160,11 +177,12 @@ class Matlab2CVisitor(MatlabVisitor):
 
         global_name = list()
         for name in ctx.name():
-            global_name.append(Var(name.getText(), self.all_var_type[name.getText()]))
+            global_name.append(Var(name.getText(),
+                    self.all_var_type[name.getText()]))
         self.route.pop()
 
         self.indent_level.addLevel()
-        _expr = NormalExpr(type_='global_define_list', var_list_=global_name, 
+        _expr = NormalExpr(type_='global_define_list', vars_=global_name, 
                     subexpr_=False, indent_=deepcopy(self.indent_level))
         return _expr
 
@@ -281,8 +299,25 @@ class Matlab2CVisitor(MatlabVisitor):
                 raise TypeError("Assign not supported type:", assign_expr)
 
         self.route.pop()
-        return AssignExpr(left_=expr_list[0], right_=expr_list[1], 
+
+        assert len(expr_list[0]._vars) > 0
+        assert len(expr_list[1]._vars) > 0
+
+        if expr_list[0]._vars[-1].Type == 'unknowType':
+            assert expr_list[1]._vars[-1].Type != 'unknowType'
+            expr_list[0]._vars[-1].Type = expr_list[1]._vars[-1].Type
+            _name = expr_list[0]._vars[-1].Name
+            self.all_var_type[_name] = expr_list[1]._vars[-1].Type
+
+        # print('left:', expr_list[0]._vars)
+        # print('right:', expr_list[1]._vars)
+
+        expr = AssignExpr(left_=expr_list[0], right_=expr_list[1], 
                 subexpr_=False, indent_=deepcopy(self.indent_level))
+
+        return expr
+
+
 
     def visitFunction_call(self, ctx:MatlabParser.Function_callContext):
         self.route.append('Function_call')
@@ -326,8 +361,8 @@ class Matlab2CVisitor(MatlabVisitor):
     def visitDigitExpr(self, ctx:MatlabParser.DigitExprContext):
         if ctx.digit():
             digit_ = ctx.digit().getText()
-        
-        return NormalExpr(type_='digit', name_=digit_)
+        var_ = Var(name_=digit_, type_='int32_t') 
+        return NormalExpr(type_='digit', name_=digit_, vars_=[var_])
 
     # Visit a parse tree produced by MatlabParser#unary_operaExpr.
     def visitUnary_operaExpr(self, ctx:MatlabParser.Unary_operaExprContext):

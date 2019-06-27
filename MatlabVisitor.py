@@ -34,11 +34,6 @@ class MatlabVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by MatlabParser#return_name.
-    def visitReturn_name(self, ctx:MatlabParser.Return_nameContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by MatlabParser#name.
     def visitName(self, ctx:MatlabParser.NameContext):
         return self.visitChildren(ctx)
