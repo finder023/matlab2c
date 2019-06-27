@@ -17,14 +17,13 @@ function_declare:
     (returnparas ASSIGN)? name paralist ;
 
 returnparas :
-    leftbracket return_name (COMMA return_name)* rightbracket
+    leftbracket name (COMMA name)* rightbracket
     | leftbracket rightbracket ;
 
 leftbracket : LEFTBRACKET ;
 
 rightbracket : RIGHTBRACKET ;
 
-return_name : NAME|NOT ;
 
 name : NAME;
 

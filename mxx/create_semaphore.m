@@ -24,13 +24,13 @@ function  [semaphore_id,return_code] = create_semphore( semaphore_name,current_v
         return;
     end
 
-    sem_ptr = sem_alloc();
-    semaphore_id = sem_ptr.sem_id;
-    sem_ptr.sem_status.current_value = current_value;
-    sem_ptr.sem_status.max_value = max_value;
-    sem_ptr.sem_status.waiting_process = 0;
+    nsem = sem_alloc();
+    semaphore_id = nsem.sem_id;
+    nsem.sem_status.current_value = current_value;
+    nsem.sem_status.max_value = max_value;
+    nsem.sem_status.waiting_process = 0;
     
-    sem_record{sem_ptr.sem_id, 1} = sem_ptr;
+    sem_record{nsem.sem_id, 1} = nsem;
     sem_num = sem_num + 1;
     return_code = NO_ERROR;
 
