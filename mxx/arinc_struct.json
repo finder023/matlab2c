@@ -1,0 +1,25 @@
+{
+    "struct proc_struct": {
+        "status": "process_status_t",
+        "timer": "timer_t*",
+        "part": "partition_t*",
+        "pid": "process_id_t"
+    },
+
+    "process_status_t" : {
+        "attributes": "process_attributes_t",
+        "process_state": "process_state_t",
+        "current_priority": "priority_t",
+        "deadline_time": "system_time_t"
+    },
+
+    "process_attributes_t": {
+        "period" : "system_time_t",
+        "time_capacity": "system_time_t",
+        "entry_point": "system_address_t",
+        "stack_size" : "stack_size_t",
+        "base_priority": "priority_t",
+        "deadline": "deadline_t",
+        "name": "name_t"
+    }
+}

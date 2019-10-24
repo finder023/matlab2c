@@ -15,7 +15,7 @@ else:
 
 class Matlab2CVisitor(MatlabVisitor):
     def __init__(self, log:bool = False,
-            func_type_path:str = str()):
+            func_type_path:str = str(), arinc_struct=dict()):
         self.all_var_type = dict()
         self.func_rtype_path = func_type_path 
         self.log = log
@@ -23,6 +23,7 @@ class Matlab2CVisitor(MatlabVisitor):
         # return variable, must be pointer
         self.indent_level = HierarchicalCoding()
         self.print_coding = False
+        self.arinc_struct = arinc_struct
         self.__load_conf()
         
     
@@ -93,14 +94,17 @@ class Matlab2CVisitor(MatlabVisitor):
         self.route.pop()
         
         var_ = Var(name_=name_)
-        
+
+        # type in conf files 
         if var_.Name in self.all_var_type:
             var_.Type = self.all_var_type[var_.Name]
 
+        # type is marco, like NO_ERROR, INVALID_PARAM etc.
         elif var_.Name.upper() == var_.Name:
             var_.Type = 'marco'
             self.all_var_type[var_.Name] = var_.Type
-        
+
+        # unknow type 
         else:
             var_.Type = 'unknowType'
             self.all_var_type[var_.Name] = var_.Type
@@ -136,6 +140,7 @@ class Matlab2CVisitor(MatlabVisitor):
             print('visit', self.route[-1], ':')
         
         # print(len(ctx.expr()))
+        # add paralist
         varlist = list()
         for _expr in ctx.expr():
             var_ = Var(name_=_expr.getText(),
@@ -158,7 +163,7 @@ class Matlab2CVisitor(MatlabVisitor):
         global_list = None 
         if ctx.global_define_list():
             global_list = self.visitGlobal_define_list(ctx.global_define_list())
-            # print('global_list:', global_list)
+            # print('global_list:', global_list.Vars)
 
         com_state = None
         if ctx.com_statement():
@@ -182,7 +187,9 @@ class Matlab2CVisitor(MatlabVisitor):
         self.route.pop()
 
         self.indent_level.addLevel()
-        _expr = NormalExpr(type_='global_define_list', vars_=global_name, 
+        # save para in vars
+        _expr = NormalExpr(type_='global_define_list', 
+                    vars_=global_name, 
                     subexpr_=False, indent_=deepcopy(self.indent_level))
         return _expr
 
@@ -300,11 +307,77 @@ class Matlab2CVisitor(MatlabVisitor):
 
         self.route.pop()
 
+        assert len(expr_list) == 2
         assert len(expr_list[0]._vars) > 0
         assert len(expr_list[1]._vars) > 0
 
+        lvals = expr_list[0]._vars
+        rvals = expr_list[1]._vars
+
+        # name expr's first elem in right value must have type
+        assert(rvals[0].Type != 'unknowType')
+
+        # struct must in arinc_struct
+        if len(rvals) > 1:
+            b_type = rvals[0].Type.strip('*')
+            assert b_type in self.arinc_struct
+        
+        # fill right value struct elem type
+        for i in range(1, len(rvals)):
+            pre_struct = self.arinc_struct
+            pre_type = rvals[i-1].Type
+            # discard pointer
+            pre_type = pre_type.strip('*')
+            # pre type must in arinc_struct
+            if (pre_type not in pre_struct):
+                print(pre_type, ' not in ', pre_struct)
+                assert pre_type in self.arinc_struct
+
+            # get pre struct
+            pre_struct = self.arinc_struct[pre_type]
+            # name must in pre struct
+            if rvals[i].Name not in pre_struct:
+                print(rvals[i].Name, ' not in ', pre_struct)
+                assert rvals[i].Name in pre_struct
+
+            # fill unknow type
+            if rvals[i].Type == 'unknowType':
+                rvals[i].Type = pre_struct[rvals[i].Name]
+                # print('fill type:', rvals[i])
+
+        # fill left value struct elem type
+        for i in range(1, len(lvals)):
+            pre_struct = self.arinc_struct
+            pre_type = lvals[i-1].Type
+            # discard pointer
+            pre_type = pre_type.strip('*')
+            # pre type must in arinc_struct
+            if (pre_type not in pre_struct):
+                print(pre_type, ' not in ', pre_struct)
+                assert pre_type in self.arinc_struct
+
+            # get pre struct
+            pre_struct = self.arinc_struct[pre_type]
+            # name must in pre struct
+            if lvals[i].Name not in pre_struct:
+                print(lvals[i].Name, ' not in ', pre_struct)
+                assert lvals[i].Name in pre_struct
+
+            # fill unknow type
+            if lvals[i].Type == 'unknowType':
+                lvals[i].Type = pre_struct[lvals[i].Name]
+                # print('fill type:', lvals[i])
+
         if expr_list[0]._vars[-1].Type == 'unknowType':
-            assert expr_list[1]._vars[-1].Type != 'unknowType'
+            if expr_list[1]._vars[-1].Type == 'unknowType':
+                print("panic, right value type unknow:", expr_list[0]._vars,
+                    expr_list[1]._vars)
+                assert(expr_list[1]._vars[-1].Type != 'unknowType')
+
+            # this is a new var, mark it
+            if len(expr_list[0]._vars) == 1:
+                expr_list[0]._vars[0]._is_new = True
+
             expr_list[0]._vars[-1].Type = expr_list[1]._vars[-1].Type
             _name = expr_list[0]._vars[-1].Name
             self.all_var_type[_name] = expr_list[1]._vars[-1].Type
@@ -389,8 +462,23 @@ class Matlab2CVisitor(MatlabVisitor):
     def visitNameExpr(self, ctx:MatlabParser.NameExprContext):
         name_list = list()
         for name in ctx.name():
-            name_list.append(self.visitName(name))
-        
+            vname = self.visitName(name)
+            name_list.append(vname)
+            # print(vname, vname._vars)
+
+        # clear struct elem var's type
+        for i in range(1, len(name_list)):
+            assert len(name_list[i]._vars) == 1
+            var_ = name_list[i]._vars[0]
+            var_.Type = 'unknowType'
+
+
+#        for name in name_list:
+#            assert(len(name._vars) == 1)
+#            var_ = name._vars[0]
+#            if var_.Type == 'unknowType':
+#                print(name_list)
+#
         return NormalExpr(type_='nameExpr', name_='.', deps_=name_list)
 
     # Visit a parse tree produced by MatlabParser#while_state.

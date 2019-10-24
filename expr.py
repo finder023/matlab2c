@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 from abc import ABCMeta, abstractmethod
-from copy import copy
+from copy import deepcopy
 
 from conf import with_hcoding
 
@@ -30,9 +30,10 @@ class HierarchicalCoding(object):
         return self._indent_str * self.level
 
 class Var(object):
-    def __init__(self, name_=str(), type_=str()):
-        self._name = name_ 
-        self._type = type_ 
+    def __init__(self, name_=str(), type_=str(), new_=False):
+        self._name = name_
+        self._type = type_
+        self._is_new = new_ 
     
     def __repr__(self):
         return 'Var({0._name!r}: {0._type!r})'.format(self)
@@ -66,6 +67,9 @@ class Var(object):
     def isPtr(self) -> bool:
         return self._type.endswith('*')
 
+    def isNew(self) -> bool:
+        return self._is_new
+
 class Expr():
     def __init__(self, type_=str(), name_=str(), deps_=list(), vars_=list()):
         self._name = name_
@@ -84,6 +88,9 @@ class Expr():
 
         # merge dep vars
         self.mergeDepVars()
+#        if (type_ == 'global_define_list'):
+#            self._vars = vars_
+#            print(vars_, self._vars)
 
     def __repr__(self):
         self._dep2str()
@@ -198,6 +205,8 @@ class NormalExpr(Expr):
         super().__init__(name_=name_, type_=type_, deps_=deps_, vars_=vars_)
         self.sub_expr = subexpr_
         self.indent_level = indent_
+        #if type_ == 'global_define_list':
+        #    print(self._vars)
 
     
     def toStr(self):
@@ -222,12 +231,11 @@ class NormalExpr(Expr):
             if len(self.Deps) == 0:
                 return str()
 
-            global_var_list = list()            
+            global_var_list = list()
             for dep in self.Deps:
                 assert len(dep._vars) == 1
                 var = dep._vars[0]
                 global_var_list.append('extern ' + var.Type + ' ' + var.Name)
-
             if not self.sub_expr:
                 self.getIndentPrefix()
 
@@ -242,9 +250,10 @@ class NormalExpr(Expr):
             # do not need call getIndentPrefix()
             com_state_list = list() 
             for dep in self.Deps:
-                com_state_list.append(dep.toStr())
+                codes = dep.toStr()
+                com_state_list.append(codes)
 
-            return '\n'.join(com_state_list)
+            return ''.join(com_state_list)
         
         elif self.Type == 'digit':
             return self.Name
@@ -280,7 +289,8 @@ class NormalExpr(Expr):
             res = global_str + '\n'
             res += statement_str
             return res
-
+        
+        # this is important, nameExpr
         elif self.Type == 'nameExpr':
             if not self.sub_expr:
                 self.getIndentPrefix()
@@ -295,6 +305,11 @@ class NormalExpr(Expr):
                 var_list.append(dep._vars[0])
 
             res = str()
+            # new_var, need define
+            if len(var_list) == 1 and var_list[0].isNew():
+                var = var_list[0]
+                res += var.Type + ' '
+
             for var in var_list:
                 res += var.Name
                 if var.isPtr():
@@ -392,18 +407,27 @@ class AssignExpr(Expr):
         left_var:Var = self.Deps[0]._vars[-1]
         right_var:Var = self.Deps[1]._vars[-1]
 
+        # print(left_var, right_var)
+
         left_str = self.Deps[0].toStr()
         right_str = self.Deps[1].toStr()
 
         if not self.sub_expr:
             self.getIndentPrefix()
 
-        ptrStar = str()
+        lptrStar = str()
+        rptrStar = str()
 
         if left_var.isPtr() and right_var.Type == 'marco':
-            ptrStar = '*'
-        res = self._indent_prefix + ptrStar + left_str + ' = '
-        res += right_str + ';' + self._end
+            lptrStar = '*'
+        elif left_var.isPtr() and not right_var.isPtr():
+            lptrStar = '*'
+        elif not left_var.isPtr() and right_var.isPtr():
+            rptrStar = '*'
+
+        
+        res = self._indent_prefix + lptrStar + left_str + ' = '
+        res += rptrStar + right_str + ';' + self._end
         return res
 
 class UnaryExpr(Expr):
@@ -479,11 +503,13 @@ class FunctionCallExpr(Expr):
             
             paralist_str = ', '.join(para_var_str_list)
 
+        tail_ = str()
         if not self.sub_expr:
             self.getIndentPrefix()
+            tail_ = ';'
 
         res = self._indent_prefix + func_name
-        res += '(' + paralist_str + ')' + self._end 
+        res += '(' + paralist_str + ')' + tail_ + self._end 
 
         return res
 
@@ -528,7 +554,7 @@ class WhileExpr(Expr):
 
         res = self._indent_prefix + 'while( ' + cond_str
         res += ') {\n' + com_str + self._indent_prefix + '}'
-        return res + self._end
+        return res + self._end + '\n'
 
 class ElseIfExpr(Expr):
     def __init__(self, cond_=Expr(), com_=Expr(), subexpr_=False,
@@ -556,7 +582,7 @@ class ElseIfExpr(Expr):
 
         res = self._indent_prefix + 'else if ( ' + cond_str
         res += ') {\n' + com_str + self._indent_prefix + '}'
-        return res + self._end
+        return res + self._end + '\n'
 
 class ElseExpr(Expr):
     def __init__(self, com_=Expr(), subexpr_=False,
@@ -577,7 +603,7 @@ class ElseExpr(Expr):
         
         res = self._indent_prefix + 'else {\n'
         res += com_str + self._indent_prefix + '}'
-        return res + self._end
+        return res + self._end + '\n'
 
 
 class IfExpr(Expr):
@@ -622,7 +648,7 @@ class IfExpr(Expr):
         res += elseif_str
         res += else_str
 
-        return res + self._end
+        return res + self._end + '\n'
 
 class ElementExpr(Expr):
     def __init__(self, name_=Expr(), location_=None, subexpr_=True,
