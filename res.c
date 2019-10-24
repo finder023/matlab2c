@@ -1,13 +1,13 @@
-[]
 void create_process( process_attributes_t* attr, process_id_t* pid, return_code_t* return_code) {
 
+    extern struct proc_struct* current;        // 1
 
     if ( valid_nr_proc() == 0 ) {
         *return_code = INVALID_CONFIG;        // 2.1
         return;        // 2.2
     }        // 2
 
-    if ( find_proc_name() != NULL ) {
+    if ( find_proc_name(attr->name) != NULL ) {
         *return_code = NO_ACTION;        // 3.1
         return;        // 3.2
     }        // 3

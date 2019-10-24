@@ -141,18 +141,58 @@ class Matlab2CVisitor(MatlabVisitor):
         
         # print(len(ctx.expr()))
         # add paralist
-        varlist = list()
-        for _expr in ctx.expr():
-            var_ = Var(name_=_expr.getText(),
-                    type_=self.all_var_type[_expr.getText()])
+        expr_list = list()
+        for expr in ctx.expr():
+            if isinstance(expr, MatlabParser.NameExprContext):
+                expr_list.append(self.visitNameExpr(expr))
+                assert expr_list[-1] is not None
 
-            expr_ = NormalExpr(type_='name', name_=var_.Name,
-                        vars_=[var_], subexpr_=True)
-            varlist.append(expr_)
+            elif isinstance(expr, MatlabParser.Unary_operaExprContext):
+                expr_list.append(self.visitUnary_operaExpr(expr))
+                assert expr_list[-1] is not None
+            
+            elif isinstance(expr, MatlabParser.BinaryExprContext):
+                expr_list.append(self.visitBinaryExpr(expr))
+                assert expr_list[-1] is not None
+
+            elif isinstance(expr, MatlabParser.DigitExprContext):
+                expr_list.append(self.visitDigitExpr(expr))
+                assert expr_list[-1] is not None
+
+            elif isinstance(expr, MatlabParser.TruthExprContext):
+                expr_list.append(self.visitTruthExpr(expr))
+                assert expr_list[-1] is not None
+            
+            elif isinstance(expr, MatlabParser.RegExprContext):
+                expr_list.append(self.visitRegExpr(expr))
+                assert expr_list[-1] is not None
+            
+            elif isinstance(expr, MatlabParser.FuncallExprContext):
+                func_expr = self.visitFuncallExpr(expr)
+                func_expr.sub_expr = True
+                expr_list.append(func_expr)
+                assert expr_list[-1] is not None
+
+            elif isinstance(expr, MatlabParser.ElemExprContext):
+                expr_list.append(self.visitElemExpr(expr))
+                assert expr_list[-1] is not None
+            
+            elif isinstance(expr, MatlabParser.NullExprContext):
+                expr_list.append(self.visitNullExpr(expr))
+                assert expr_list[-1] is not None
+            
+            elif isinstance(expr, MatlabParser.StrExprContext):
+                expr_list.append(self.visitStrExpr(expr))
+                assert expr_list[-1] is not None
+
+            else:
+                raise TypeError("Assign not supported type:", expr)
 
         self.route.pop()
-        return NormalExpr(type_='paralist', vars_=deepcopy(varlist),
-                            subexpr_=True, deps_=varlist) 
+        expr_ = NormalExpr(type_='paralist', 
+                            subexpr_=True, deps_=expr_list)
+        # print(expr_)
+        return expr_
     
     def visitStatement(self, ctx:MatlabParser.StatementContext):
         self.route.append('Statement')

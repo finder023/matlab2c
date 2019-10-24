@@ -89,7 +89,6 @@ class Expr():
         # merge dep vars
         self.mergeDepVars()
 #        if (type_ == 'global_define_list'):
-#            self._vars = vars_
 #            print(vars_, self._vars)
 
     def __repr__(self):
@@ -196,7 +195,7 @@ class Expr():
                     _vars.append(var_)
         
         # if len(_vars) > 0: print('mergeRes:', _vars)
-        self._vars = _vars
+        self._vars = self._vars + _vars
 
 # digit, truth_value, nameExpr, 
 class NormalExpr(Expr):
@@ -225,16 +224,17 @@ class NormalExpr(Expr):
 
         # function call, function declare
         elif self.Type == 'paralist':
-            return str()
+            code_list = list()
+            for dep in self.Deps:
+                code_list.append(dep.toStr())
+            return ','.join(code_list) 
 
         elif self.Type == 'global_define_list':
-            if len(self.Deps) == 0:
+            if len(self._vars) == 0:
                 return str()
 
             global_var_list = list()
-            for dep in self.Deps:
-                assert len(dep._vars) == 1
-                var = dep._vars[0]
+            for var in self._vars:
                 global_var_list.append('extern ' + var.Type + ' ' + var.Name)
             if not self.sub_expr:
                 self.getIndentPrefix()
@@ -494,15 +494,10 @@ class FunctionCallExpr(Expr):
         if func_name_expr is not None:
             func_name = func_name_expr.toStr() 
 
+        # function call 
         if paralist_expr is not None:
-            para_var_str_list = list()
-            para_vars = paralist_expr._vars
+            paralist_str = paralist_expr.toStr()    
             
-            for var in para_vars:
-                para_var_str_list.append(var.Name)
-            
-            paralist_str = ', '.join(para_var_str_list)
-
         tail_ = str()
         if not self.sub_expr:
             self.getIndentPrefix()

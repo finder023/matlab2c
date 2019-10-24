@@ -7,7 +7,7 @@ function [pid, return_code] = create_process(attr)
         return;
     end
 
-    if find_proc_name() ~= []
+    if find_proc_name(attr.name) ~= []
         return_code = NO_ACTION;
         return;
     end
