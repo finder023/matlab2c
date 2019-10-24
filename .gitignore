@@ -2,3 +2,4 @@ a.out
 .vscode
 .antlr
 __pycache__
+*.c
