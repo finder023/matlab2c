@@ -65,7 +65,7 @@ class Matlab2CVisitor(MatlabVisitor):
         if ctx.returnparas():
             ret_var = self.visitReturnparas(ctx.returnparas())
             # something wrong
-            # print('ret_val:', ret_var.Vars)
+            # print('ret_val:', ret_var)
         # visit paralist
         if ctx.paralist():
             para_list = self.visitParalist(ctx.paralist())
@@ -360,7 +360,9 @@ class Matlab2CVisitor(MatlabVisitor):
         # struct must in arinc_struct
         if len(rvals) > 1:
             b_type = rvals[0].Type.strip('*')
-            assert b_type in self.arinc_struct
+            if b_type not in self.arinc_struct:
+                print(b_type, ' not in ', self.arinc_struct)
+                assert b_type in self.arinc_struct
         
         # fill right value struct elem type
         for i in range(1, len(rvals)):
