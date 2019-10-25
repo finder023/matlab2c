@@ -67,7 +67,7 @@ def main():
             # print(mfile)
             tfile = os.path.join(module_path, file + '.json')
             # print(tfile)
-            print(mfile, tfile) 
+            # print(mfile, tfile) 
             convert_code(mfile, tfile)
             
 

@@ -348,84 +348,97 @@ class Matlab2CVisitor(MatlabVisitor):
         self.route.pop()
 
         assert len(expr_list) == 2
-        assert len(expr_list[0]._vars) > 0
-        assert len(expr_list[1]._vars) > 0
-
-        lvals = expr_list[0]._vars
-        rvals = expr_list[1]._vars
-
-        # name expr's first elem in right value must have type
-        assert(rvals[0].Type != 'unknowType')
-
-        # struct must in arinc_struct
-        if len(rvals) > 1:
-            b_type = rvals[0].Type.strip('*')
-            if b_type not in self.arinc_struct:
-                print(b_type, ' not in ', self.arinc_struct)
-                assert b_type in self.arinc_struct
+        lexpr = expr_list[0]
+        rexpr = expr_list[1]
         
-        # fill right value struct elem type
-        for i in range(1, len(rvals)):
-            pre_struct = self.arinc_struct
-            pre_type = rvals[i-1].Type
-            # discard pointer
-            pre_type = pre_type.strip('*')
-            # pre type must in arinc_struct
-            if (pre_type not in pre_struct):
-                print(pre_type, ' not in ', pre_struct)
-                assert pre_type in self.arinc_struct
+        assert len(lexpr._vars) > 0
+        assert len(rexpr._vars) > 0
 
-            # get pre struct
-            pre_struct = self.arinc_struct[pre_type]
-            # name must in pre struct
-            if rvals[i].Name not in pre_struct:
-                print(rvals[i].Name, ' not in ', pre_struct)
-                assert rvals[i].Name in pre_struct
+        lvals = lexpr._vars
+        rvals = rexpr._vars
+        
+        if lexpr.Type == 'nameExpr':
+            # print(lvals) 
+            # fill left value struct elem type
+            for i in range(1, len(lvals)):
+                pre_struct = self.arinc_struct
+                pre_type = lvals[i-1].Type
+                # discard pointer
+                pre_type = pre_type.strip('*')
+                # pre type must in arinc_struct
+                if (pre_type not in pre_struct):
+                    print(pre_type, ' not in ', pre_struct)
+                    assert pre_type in self.arinc_struct
 
-            # fill unknow type
-            if rvals[i].Type == 'unknowType':
-                rvals[i].Type = pre_struct[rvals[i].Name]
-                # print('fill type:', rvals[i])
+                # get pre struct
+                pre_struct = self.arinc_struct[pre_type]
+                # name must in pre struct
+                if lvals[i].Name not in pre_struct:
+                    print(lvals[i].Name, ' not in ', pre_struct)
+                    assert lvals[i].Name in pre_struct
 
-        # fill left value struct elem type
-        for i in range(1, len(lvals)):
-            pre_struct = self.arinc_struct
-            pre_type = lvals[i-1].Type
-            # discard pointer
-            pre_type = pre_type.strip('*')
-            # pre type must in arinc_struct
-            if (pre_type not in pre_struct):
-                print(pre_type, ' not in ', pre_struct)
-                assert pre_type in self.arinc_struct
+                # fill unknow type
+                if lvals[i].Type == 'unknowType':
+                    lvals[i].Type = pre_struct[lvals[i].Name]
+                    # print('fill type:', lvals[i])
+        
+        if rexpr.Type == 'nameExpr':
+            # name expr's first elem in right value must have type
+            assert(rvals[0].Type != 'unknowType')
 
-            # get pre struct
-            pre_struct = self.arinc_struct[pre_type]
-            # name must in pre struct
-            if lvals[i].Name not in pre_struct:
-                print(lvals[i].Name, ' not in ', pre_struct)
-                assert lvals[i].Name in pre_struct
+            # struct must in arinc_struct
+            if len(rvals) > 1:
+                b_type = rvals[0].Type.strip('*')
+                if b_type not in self.arinc_struct:
+                    print(b_type, ' not in ', self.arinc_struct)
+                    assert b_type in self.arinc_struct
+        
+            # fill right value struct elem type
+            for i in range(1, len(rvals)):
+                pre_struct = self.arinc_struct
+                pre_type = rvals[i-1].Type
+                # discard pointer
+                pre_type = pre_type.strip('*')
+                # pre type must in arinc_struct
+                if (pre_type not in pre_struct):
+                    print(pre_type, ' not in ', pre_struct)
+                    assert pre_type in self.arinc_struct
 
-            # fill unknow type
-            if lvals[i].Type == 'unknowType':
-                lvals[i].Type = pre_struct[lvals[i].Name]
-                # print('fill type:', lvals[i])
+                # get pre struct
+                pre_struct = self.arinc_struct[pre_type]
+                # name must in pre struct
+                if rvals[i].Name not in pre_struct:
+                    print(rvals[i].Name, ' not in ', pre_struct)
+                    assert rvals[i].Name in pre_struct
 
-        if expr_list[0]._vars[-1].Type == 'unknowType':
-            if expr_list[1]._vars[-1].Type == 'unknowType':
-                print("panic, right value type unknow:", expr_list[0]._vars,
-                    expr_list[1]._vars)
-                assert(expr_list[1]._vars[-1].Type != 'unknowType')
-
+                # fill unknow type
+                if rvals[i].Type == 'unknowType':
+                    rvals[i].Type = pre_struct[rvals[i].Name]
+                    # print('fill type:', rvals[i])
+       
+        # need type inference
+        if lvals[-1].Type == 'unknowType':
+            rtype = str()
             # this is a new var, mark it
-            if len(expr_list[0]._vars) == 1:
-                expr_list[0]._vars[0]._is_new = True
+            if len(lvals) == 1:
+                lvals[0]._is_new = True
+            
+            if rexpr.Type == 'nameExpr':
+                assert rvals[-1].Type != 'unknowType'
+                lvals[-1].Type = rvals[-1].Type
+                
+            elif rexpr.Type == 'funcallExpr' or rexpr.Type == 'function_call':
+                assert(rvals[0].Type != 'unknowType')
+                lvals[-1].Type = rvals[0].Type
 
-            expr_list[0]._vars[-1].Type = expr_list[1]._vars[-1].Type
-            _name = expr_list[0]._vars[-1].Name
-            self.all_var_type[_name] = expr_list[1]._vars[-1].Type
+            else:
+                raise TypeError('inference not supported type', str(rexpr))
+            
+            if lvals[0]._is_new:
+                self.all_var_type[lvals[0].Name] = lvals[0].Type
 
-        # print('left:', expr_list[0]._vars)
-        # print('right:', expr_list[1]._vars)
+        # print(lexpr, rexpr)
+        # print(lvals, rvals)
 
         expr = AssignExpr(left_=expr_list[0], right_=expr_list[1], 
                 subexpr_=False, indent_=deepcopy(self.indent_level))

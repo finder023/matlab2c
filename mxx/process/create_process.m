@@ -1,4 +1,4 @@
-function [pid, return_code] = create_process(attr)
+function [pid, return_code] = CREATE_PROCESS(attr)
 
     global current;
 

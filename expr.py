@@ -404,13 +404,30 @@ class AssignExpr(Expr):
         assert len(self.Deps) == 2
         # print('AssignExpr: ', self)
 
-        left_var:Var = self.Deps[0]._vars[-1]
-        right_var:Var = self.Deps[1]._vars[-1]
-
-        # print(left_var, right_var)
-
-        left_str = self.Deps[0].toStr()
-        right_str = self.Deps[1].toStr()
+        lexpr = self.Deps[0]
+        rexpr = self.Deps[1]
+        
+        if lexpr.Type == 'nameExpr':
+            lvar = lexpr._vars[-1];
+        
+        elif lexpr.Type == 'functino_call':
+            lvar = lexpr._vars[0]
+        
+        else:
+            raise TypeError('not supported ltype in assign tostr,' , str(lexpr))
+        
+        if rexpr.Type == 'nameExpr':
+            rvar = rexpr._vars[-1]
+            
+        elif rexpr.Type == 'function_call':
+            rvar = rexpr._vars[0]
+        
+        else:
+            raise TypeError('not supported rtype in assign tostr, ', str(rexpr))
+        
+        
+        left_str = lexpr.toStr()
+        right_str = rexpr.toStr()
 
         if not self.sub_expr:
             self.getIndentPrefix()
@@ -418,11 +435,11 @@ class AssignExpr(Expr):
         lptrStar = str()
         rptrStar = str()
 
-        if left_var.isPtr() and right_var.Type == 'marco':
+        if lvar.isPtr() and rvar.Type == 'marco':
             lptrStar = '*'
-        elif left_var.isPtr() and not right_var.isPtr():
+        elif lvar.isPtr() and not rvar.isPtr():
             lptrStar = '*'
-        elif not left_var.isPtr() and right_var.isPtr():
+        elif not lvar.isPtr() and rvar.isPtr():
             rptrStar = '*'
 
         

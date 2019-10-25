@@ -1,4 +1,4 @@
-function [return_code] = myFun(process_id, priority)
+function [return_code] = SET_PRIORITY(process_id, priority)
     proc = find_proc(process_id);
 
     if proc == []
