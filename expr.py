@@ -3,7 +3,7 @@
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
-from conf import with_hcoding
+from conf import with_hcoding, inline_func
 
 class HierarchicalCoding(object):
     def __init__(self):
@@ -94,20 +94,19 @@ class Expr():
     def __repr__(self):
         self._dep2str()
         if len(self._name) != 0 and len(self._deps) != 0:
-            return '<type:{0._type}, name:{0._name}, deps:{0._dep_str}>'\
-                                                                .format(self)
+            return '<Type:{0._type!r}, Name:{0._name!r}'.format(self).strip() +\
+                        ', Deps:' + self._dep_str + '>'
         if len(self._deps) != 0 and len(self._name) == 0:
-            return '<type:{0._type}, deps:{0._dep_str}>'.format(self)
+            return '<Type:{0._type!r}'.format(self).strip() +\
+                        ', Deps:' + self._dep_str + '>'
         if len(self._deps) == 0 and len(self._name) != 0:
-            return '<type:{0._type}, name:{0._name}>'.format(self)
-        return '<type:{0._type}>'.format(self)
+            return '<Type:{0._type!r}, Name:{0._name!r}>'.format(self)
+        return '<Type:{0._type!r}>'.format(self)
 
     def __str__(self):
         return self.__repr__()
 
-
     def _dep2str(self):
-        # self._dep_str = ','.join(self._deps)
         self._dep_str = str(self._deps)
 
     @property
@@ -227,7 +226,7 @@ class NormalExpr(Expr):
             code_list = list()
             for dep in self.Deps:
                 code_list.append(dep.toStr())
-            return ','.join(code_list) 
+            return ', '.join(code_list) 
 
         elif self.Type == 'global_define_list':
             if len(self._vars) == 0:
@@ -241,7 +240,7 @@ class NormalExpr(Expr):
 
             res = self._indent_prefix
             res += (';\n' + self._indent_prefix).join(global_var_list)
-            return res + ';' + self._end
+            return res + ';' + self._end.strip('\n')
             
         elif self.Type == 'com_statement':
             if len(self.Deps) == 0:
@@ -365,6 +364,8 @@ class FunctionDeclareExpr(Expr):
 
         para_str = ', '.join(c_para_list)
 
+        # add do_ prefix, and lower func name
+        name_str = 'do_' + name_str.lower()
         res = 'void ' + name_str + '( '
         res += para_str + ')'
         return res
@@ -388,7 +389,7 @@ class FunctionExpr(Expr):
         func_str = func_expr.toStr()
         state_str = state_expr.toStr()
 
-        res = self._indent_prefix + func_str + ' {\n\n'
+        res = self._indent_prefix + func_str + ' {\n'
         res += state_str + '}'
         return res + self._end + '\n'
 
@@ -408,7 +409,7 @@ class AssignExpr(Expr):
         rexpr = self.Deps[1]
         
         if lexpr.Type == 'nameExpr':
-            lvar = lexpr._vars[-1];
+            lvar = lexpr._vars[-1]
         
         elif lexpr.Type == 'functino_call':
             lvar = lexpr._vars[0]
@@ -420,6 +421,9 @@ class AssignExpr(Expr):
             rvar = rexpr._vars[-1]
             
         elif rexpr.Type == 'function_call':
+            rvar = rexpr._vars[0]
+
+        elif rexpr.Type == 'nullExpr':
             rvar = rexpr._vars[0]
         
         else:
@@ -502,7 +506,6 @@ class FunctionCallExpr(Expr):
     def toStr(self):
         assert(len(self.Deps) == 2)
 
-
         func_name_expr = self.Deps[0]
         paralist_expr = self.Deps[1]
 
@@ -511,14 +514,53 @@ class FunctionCallExpr(Expr):
         if func_name_expr is not None:
             func_name = func_name_expr.toStr() 
 
-        # function call 
-        if paralist_expr is not None:
-            paralist_str = paralist_expr.toStr()    
-            
         tail_ = str()
         if not self.sub_expr:
             self.getIndentPrefix()
             tail_ = ';'
+        
+        # function call 
+        if paralist_expr is not None:
+            paralist_str = paralist_expr.toStr()    
+        
+        if func_name in inline_func:
+            para_list = paralist_str.split(', ')
+            pre = self._indent_prefix
+            if func_name == 'add_timer':
+                assert len(para_list) == 2
+                proc = para_list[0]
+                timeout = para_list[1]
+                res = pre + 'timer_t *timer = kmalloc(sizeof(timer_t));\n'
+                res += pre + 'timer_init(timer, %s, %s);\n' % (proc, timeout)
+                res += pre + 'set_wt_flag(%s, WT_TIMER);\n' % (proc)
+                res += pre + 'add_timer(timer);\n'
+                res += pre + '%s->timer = timer;\n' % (proc)
+                return res
+
+            if func_name == 'set_proc_waiting':
+                assert len(para_list) == 3
+                proc = para_list[0]
+                flag = para_list[1]
+                resources = para_list[2]
+                res = pre + '%s->status.process_state = WAITING;\n' % proc
+                res += pre + 'list_del_init(&%s->run_link);\n' % proc
+                res += pre + 'set_wt_flag(%s, %s);\n' % (proc, flag)
+                if resources != 'NULL':
+                    res += pre + 'list_add_before(&%s->waiting_thread, \
+                            &%s->run_link);\n' % (resources, proc)
+                return res
+            
+            if func_name == 'stop_timer':
+                assert(len(para_list) == 1)
+                proc = para_list[0]
+                res = pre + 'timer_t *timer = %s->timer;\n' % proc
+                res += pre + 'del_timer(timer);\n'
+                res += pre + 'clear_wt_flag(%s, WT_TIMER);\n' % proc
+                res += pre + 'kfree_timer(timer);\n'
+                res += pre + '%s->timer = NULL;\n' % proc
+
+                return res
+
 
         res = self._indent_prefix + func_name
         res += '(' + paralist_str + ')' + tail_ + self._end 
@@ -571,6 +613,8 @@ class WhileExpr(Expr):
 class ElseIfExpr(Expr):
     def __init__(self, cond_=Expr(), com_=Expr(), subexpr_=False,
                     indent_=HierarchicalCoding(), vars_=list()):
+        # print(com_)
+        # print(cond_)
         super().__init__(type_='elseif_state', deps_=[cond_, com_], vars_=vars_)
         self.sub_expr = subexpr_
         self.indent_level = indent_
@@ -592,9 +636,9 @@ class ElseIfExpr(Expr):
         if not self.sub_expr:
             self.getIndentPrefix()
 
-        res = self._indent_prefix + 'else if ( ' + cond_str
+        res = '\n' + self._indent_prefix + 'else if ( ' + cond_str
         res += ') {\n' + com_str + self._indent_prefix + '}'
-        return res + self._end + '\n'
+        return res + self._end.strip('\n')
 
 class ElseExpr(Expr):
     def __init__(self, com_=Expr(), subexpr_=False,
@@ -611,30 +655,31 @@ class ElseExpr(Expr):
         if com_expr is not None:
             com_str = com_expr.toStr()
 
-        self.getIndentPrefix()
+        if not self.sub_expr:
+            self.getIndentPrefix()
         
-        res = self._indent_prefix + 'else {\n'
+        res = '\n' + self._indent_prefix + 'else {\n'
         res += com_str + self._indent_prefix + '}'
-        return res + self._end + '\n'
+        return res + self._end.strip('\n')
 
 
 class IfExpr(Expr):
-    def __init__(self, expr_=Expr(), com_=Expr(), elseif_=Expr(), else_=Expr(),
+    def __init__(self, expr_=Expr(), com_=Expr(), elseif_=list(), else_=Expr(),
                     subexpr_=False, indent_=HierarchicalCoding(), 
                     vars_=list()):
-        super().__init__(type_='if_state', deps_=[expr_, com_, elseif_, else_],
+        super().__init__(type_='if_state', deps_=[expr_, com_, else_] + elseif_,
                             vars_=vars_)
         self.sub_expr = subexpr_
         self.indent_level = indent_
 
     def toStr(self):
-        assert len(self.Deps) == 4
+        assert len(self.Deps) >= 3
 
         if_cond_expr = self.Deps[0]
         if_com_expr = self.Deps[1]
-        elseif_expr = self.Deps[2]
-        else_expr = self.Deps[3]
-
+        else_expr = self.Deps[2]
+        elseif_expr_list = self.Deps[3:]
+        
         if_cond_str, if_com_str, elseif_str, else_str = '', '', '', ''
         if if_cond_expr is not None:
             if_cond_str = if_cond_expr.toStr()
@@ -642,8 +687,9 @@ class IfExpr(Expr):
         if if_com_expr is not None:
             if_com_str = if_com_expr.toStr()
 
-        if elseif_expr is not None:
-            elseif_str = elseif_expr.toStr()
+        
+        for expr in elseif_expr_list:
+            elseif_str += expr.toStr()
 
         if else_expr is not None:
             else_str = else_expr.toStr()
@@ -660,7 +706,11 @@ class IfExpr(Expr):
         res += elseif_str
         res += else_str
 
-        return res + self._end + '\n'
+        if res.endswith(self._end.strip()):
+            return res + '\n'
+        else:
+            return res + self._end
+
 
 class ElementExpr(Expr):
     def __init__(self, name_=Expr(), location_=None, subexpr_=True,

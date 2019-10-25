@@ -19,9 +19,9 @@ args = parser.parse_args()
 arinc_struct = dict()
 arinc_struct_conf_path = "./mxx/arinc_struct.json"
 
-from conf import mstar_dir
+from conf import mstar_dir, cvt_file
 
-def convert_code(mstar_path: str, mtype_path: str):
+def convert_code(mstar_path: str, mtype_path: dict):
     instream = FileStream(mstar_path)
     matlab_lexer = MatlabLexer(instream)
     token_stream = CommonTokenStream(matlab_lexer)
@@ -30,7 +30,7 @@ def convert_code(mstar_path: str, mtype_path: str):
 
     tree = matlab_parser.function()
 
-    cvtor = Matlab2CVisitor(log=args.log, func_type_path=mtype_path,
+    cvtor = Matlab2CVisitor(log=args.log, func_type_=mtype_path,
         arinc_struct=arinc_struct)
     func_expr = cvtor.visit(tree)
 
@@ -56,19 +56,32 @@ def main():
         
         module_path = os.path.join(cur_path, path)
         file_list = os.listdir(module_path)
-        
+       
+        module_conf = dict() 
+        # load module type conf file
+        for file in file_list:
+            if file.endswith('.json'):
+                mc_path = os.path.join(module_path, file)
+                with open(mc_path, 'r') as f:
+                    module_conf = json.load(f);
+            
+         
         for file in file_list:
             if file.endswith('.json'):
                 continue
             
             file = file.strip('.m')
 
+            if file not in cvt_file:
+                continue
+            
+            assert file in module_conf
+            func_type = module_conf[file]
+            
             mfile = os.path.join(module_path, file + '.m')
             # print(mfile)
-            tfile = os.path.join(module_path, file + '.json')
-            # print(tfile)
-            # print(mfile, tfile) 
-            convert_code(mfile, tfile)
+             
+            convert_code(mfile, func_type)
             
 
     

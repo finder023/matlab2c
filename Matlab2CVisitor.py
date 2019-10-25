@@ -14,23 +14,17 @@ else:
 
 
 class Matlab2CVisitor(MatlabVisitor):
-    def __init__(self, log:bool = False,
-            func_type_path:str = str(), arinc_struct=dict()):
-        self.all_var_type = dict()
-        self.func_rtype_path = func_type_path 
+    def __init__(self, log:bool = False, func_type_:dict = dict(),
+            arinc_struct=dict(), indent_level_=HierarchicalCoding()):
+        self.all_var_type = func_type_ 
         self.log = log
         self.route = list() 
         # return variable, must be pointer
-        self.indent_level = HierarchicalCoding()
+        self.indent_level = HierarchicalCoding() 
         self.print_coding = False
         self.arinc_struct = arinc_struct
-        self.__load_conf()
+       
         
-    
-    def __load_conf(self):
-        with open(self.func_rtype_path, 'r') as f:
-            self.all_var_type = json.load(f)
-
     def visitFunction(self, ctx:MatlabParser.FunctionContext):
         self.route.append('Function')
         if self.log:
@@ -351,13 +345,13 @@ class Matlab2CVisitor(MatlabVisitor):
         lexpr = expr_list[0]
         rexpr = expr_list[1]
         
-        assert len(lexpr._vars) > 0
-        assert len(rexpr._vars) > 0
 
         lvals = lexpr._vars
         rvals = rexpr._vars
         
         if lexpr.Type == 'nameExpr':
+            assert len(lvals) > 0
+            
             # print(lvals) 
             # fill left value struct elem type
             for i in range(1, len(lvals)):
@@ -383,9 +377,9 @@ class Matlab2CVisitor(MatlabVisitor):
                     # print('fill type:', lvals[i])
         
         if rexpr.Type == 'nameExpr':
+            assert len(rvals) > 0
             # name expr's first elem in right value must have type
             assert(rvals[0].Type != 'unknowType')
-
             # struct must in arinc_struct
             if len(rvals) > 1:
                 b_type = rvals[0].Type.strip('*')
@@ -564,6 +558,7 @@ class Matlab2CVisitor(MatlabVisitor):
             print('->'.join(self.route))
             print('visit', self.route[-1], ':')
 
+        pre_indent = deepcopy(self.indent_level)
         assert ctx.expr()
         if_cond_ = self.visit(ctx.expr())
         # print('if_cond_:', if_cond_) 
@@ -573,15 +568,20 @@ class Matlab2CVisitor(MatlabVisitor):
             if_state = self.visitCom_statement(ctx.com_statement())
             self.indent_level.popLevel()
             # print('if_state', if_state) 
-        elseif_state = None 
+        elseif_state = list()
         if ctx.elseif_state():
+            # self.indent_level.pushLevel()
+            self.indent_level.addLevel()
             elseif_state = self.visitElseif_state(ctx.elseif_state())
+            # self.indent_level.popLevel()
 
         else_state = None 
         if ctx.else_state():
-            self.indent_level.pushLevel()
+            #self.indent_level.pushLevel()
+            self.indent_level.addLevel()
             else_state = self.visitElse_state(ctx.else_state())
-            self.indent_level.popLevel()
+            #self.indent_level.popLevel()
+        
         self.route.pop()
         # print('if out indent level:', self.indent_level.level)
         expr_ = IfExpr(expr_=if_cond_, com_=if_state, elseif_=elseif_state, 
@@ -591,15 +591,24 @@ class Matlab2CVisitor(MatlabVisitor):
 
     # Visit a parse tree produced by MatlabParser#elseif_state.
     def visitElseif_state(self, ctx:MatlabParser.Elseif_stateContext):
-        assert ctx.expr()
-        elseif_cond_ = self.visit(ctx.expr())
-        elseif_state_ = list()
-        if ctx.com_statement():
-            self.indent_level.pushLevel()
-            elseif_state = self.visitCom_statement(ctx.com_statement())
-            self.indent_level.popLevel()
+        elif_expr_list = list()
+        
+        for ef_expr in ctx:
+            assert ef_expr.expr()
 
-        return ElseIfExpr(cond_=elseif_cond_, com_=elseif_state_)
+            elseif_cond_ = self.visit(ef_expr.expr())
+
+            if ef_expr.com_statement():
+                self.indent_level.pushLevel()
+                elseif_state_ = self.visitCom_statement(ef_expr.com_statement())
+                self.indent_level.popLevel()
+
+            _expr = ElseIfExpr(cond_=elseif_cond_, com_=elseif_state_,
+                        indent_=deepcopy(self.indent_level), subexpr_=False)
+            elif_expr_list.append(_expr)
+
+        return elif_expr_list
+
 
     # Visit a parse tree produced by MatlabParser#else_state.
     def visitElse_state(self, ctx:MatlabParser.Else_stateContext):
@@ -608,7 +617,8 @@ class Matlab2CVisitor(MatlabVisitor):
             else_state_ = self.visitCom_statement(ctx.com_statement())
             self.indent_level.popLevel()
 
-        return ElseExpr(com_=else_state_)
+        return ElseExpr(com_=else_state_, indent_=deepcopy(self.indent_level),
+                            subexpr_=False)
 
     # Visit a parse tree produced by MatlabParser#break_state.
     def visitBreak_state(self, ctx:MatlabParser.Break_stateContext):
@@ -622,7 +632,8 @@ class Matlab2CVisitor(MatlabVisitor):
 
     # Visit a parse tree produced by MatlabParser#nullExpr.
     def visitNullExpr(self, ctx:MatlabParser.NullExprContext):
-        return NormalExpr(type_='nullExpr') 
+        null_var = Var(name_='null', type_='void*')
+        return NormalExpr(type_='nullExpr', vars_=[null_var]) 
 
     # Visit a parse tree produced by MatlabParser#element_take.
     def visitElement(self, ctx:MatlabParser.Element_takeContext):

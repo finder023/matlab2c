@@ -1,0 +1,38 @@
+{
+    "create_process" : {
+        "pid": "process_id_t*",
+        "return_code": "return_code_t*",
+        "current": "struct proc_struct*",
+
+        "attr": "process_attributes_t*",
+
+        "alloc_proc": "struct proc_struct*"
+    },
+
+    "set_priority" : {
+        "return_code":"return_code_t*",
+        "process_id": "process_id_t",
+        "priority": "priority_t",
+        "find_proc": "struct proc_struct*"
+    },
+
+    "suspend_self" : {
+        "return_code" : "return_code_t*",
+        "time_out" : "system_time_t",
+        "current": "struct proc_struct*"
+    },
+
+    "suspend" : {
+        "return_code": "return_code_t*",
+        "current": "struct proc_struct*",
+        "find_proc":"struct proc_struct*",
+        "process_id":"process_id_t"
+    },
+
+    "resume":{
+        "return_code":"return_code_t*",
+        "process_id":"process_id_t",
+        "find_proc":"struct proc_struct*"
+    }
+
+}
