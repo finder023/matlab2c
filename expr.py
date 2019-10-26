@@ -425,6 +425,12 @@ class AssignExpr(Expr):
 
         elif rexpr.Type == 'nullExpr':
             rvar = rexpr._vars[0]
+
+        elif rexpr.Type == 'digit':
+            rvar = rexpr._vars[0]
+
+        elif rexpr.Type == 'binaryExpr':
+            rvar = rexpr._vars[-1]
         
         else:
             raise TypeError('not supported rtype in assign tostr, ', str(rexpr))
@@ -558,6 +564,15 @@ class FunctionCallExpr(Expr):
                 res += pre + 'clear_wt_flag(%s, WT_TIMER);\n' % proc
                 res += pre + 'kfree_timer(timer);\n'
                 res += pre + '%s->timer = NULL;\n' % proc
+
+                return res
+
+            if func_name == 'set_proc_dormant':
+                assert len(para_list) == 1
+                proc = para_list[0]
+                res = pre + '%s->status.process_state = DORMANT;\n' % proc
+                res += pre + 'list_del_init(&%s->run_link);\n' % proc
+                res += pre + 'list_add_before(&%s->part->dormant_set, &%s->run_link);\n' % (proc, proc)
 
                 return res
 

@@ -55,7 +55,8 @@ class Matlab2CVisitor(MatlabVisitor):
             print('->'.join(self.route))
             print('visit', self.route[-1], ':')
 
-        # visit return_params 
+        # visit return_params
+        ret_var = NormalExpr()
         if ctx.returnparas():
             ret_var = self.visitReturnparas(ctx.returnparas())
             # something wrong

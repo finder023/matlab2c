@@ -32,3 +32,11 @@
 2. clear_wt_flag
 3. free_timer
 4. proc->timer == NULL
+
+### set_proc_dormant
+
+- `set_proc_dormant(proc)`
+  
+1. proc.status.process_state = DORMANT;
+2. list_del_from run link
+3. list_add_to dormant list

@@ -17,9 +17,8 @@ parser.add_argument('-l', '--log', dest='log', action='store_true',
 args = parser.parse_args()
 
 arinc_struct = dict()
-arinc_struct_conf_path = "./mxx/arinc_struct.json"
 
-from conf import mstar_dir, cvt_file
+from conf import mstar_dir, cvt_file, arinc_struct_conf_path
 
 def convert_code(mstar_path: str, mtype_path: dict):
     instream = FileStream(mstar_path)
@@ -58,30 +57,31 @@ def main():
         file_list = os.listdir(module_path)
        
         module_conf = dict() 
-        # load module type conf file
-        for file in file_list:
-            if file.endswith('.json'):
-                mc_path = os.path.join(module_path, file)
+        # load module type conf fn
+        for fn in file_list:
+            if fn.endswith('.json'):
+                mc_path = os.path.join(module_path, fn)
                 with open(mc_path, 'r') as f:
-                    module_conf = json.load(f);
+                    module_conf = json.load(f)
             
          
-        for file in file_list:
-            if file.endswith('.json'):
+        for fn in file_list:
+            if fn.endswith('.json'):
                 continue
             
-            file = file.strip('.m')
+            fn = fn.strip('.m')
+            lfn = fn.lower()
 
-            if file not in cvt_file:
+            if lfn not in cvt_file:
                 continue
             
-            assert file in module_conf
-            func_type = module_conf[file]
+            assert lfn in module_conf
+            func_type = module_conf[lfn]
             
-            mfile = os.path.join(module_path, file + '.m')
-            # print(mfile)
+            mfn = os.path.join(module_path, fn + '.m')
+            # print(mfn)
              
-            convert_code(mfile, func_type)
+            convert_code(mfn, func_type)
             
 
     

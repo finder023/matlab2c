@@ -3,7 +3,9 @@
         "status": "process_status_t",
         "timer": "timer_t*",
         "part": "partition_t*",
-        "pid": "process_id_t"
+        "pid": "process_id_t",
+        "wait_state":"uint32_t",
+        "time_slice": "system_time_t"
     },
 
     "process_status_t" : {
@@ -21,5 +23,18 @@
         "base_priority": "priority_t",
         "deadline": "deadline_t",
         "name": "name_t"
+    },
+
+    "partition_t" : {
+        "status":"partition_status_t"
+    },
+
+    "partition_status_t":{
+        "period":"system_time_t",
+        "duration":"system_time_t",
+        "identifier":"partition_id_t",
+        "lock_level":"lock_level_t",
+        "operating_mode":"operating_mode_t",
+        "start_condition":"start_condition_t"
     }
 }
