@@ -28,8 +28,16 @@ cvt_file = [
 #    "create_semaphore",
 #    "wait_semaphore",
 #    'signal_semaphore'
-    'get_semaphore_id',
-    'get_semaphore_status'
+#    'get_semaphore_id',
+#    'get_semaphore_status'
+#
+#    # event
+#    'create_event',
+#    "set_event",
+#    "reset_event",
+#    "wait_event",
+#    "get_event_id",
+#    "get_event_status"
 ]
 
 inline_func = [
@@ -39,5 +47,7 @@ inline_func = [
     'stop_timer',
     "wakeup_waiting_proc",
     'add_sem',
-    'select_waiting_proc'
+    'select_waiting_proc',
+    'add_event',
+    'stop_all_timer'
 ]

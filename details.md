@@ -37,6 +37,12 @@
 2. clear_wt_flag
 3. free_timer
 
+### stop all timer in a list
+
+- `stop_all_timer(resources)`
+
+1. 参考wakeup_waiting_proc
+
 ### set_proc_dormant
 
 - `set_proc_dormant(proc)`
@@ -47,7 +53,7 @@
 
 ### wakeup waiting proc with flag waiting_state
 
-- `wakeup_waiting_proc(flag)`
+- `wakeup_waiting_proc(flag, resources)`
 
 1. le = part->proc_set.next;
 2. 循环查找flag
@@ -55,7 +61,7 @@
 
 ### add new semaphore to partition
 
-- `add_sem(partition, sem)`
+- `add_[sem, event, buffer....](partition, sem)`
   
 1. list_add
 2. sem_num += 1

@@ -51,5 +51,17 @@
         "current_value":"semaphore_value_t",
         "max_value":"semaphore_value_t",
         "waiting_processes":"waiting_range_t"
+    },
+
+    
+    "event_t": {
+        "status":"event_status_t",
+        "event_id": "event_id_t",
+        "event_name": "event_name_t"
+    },
+
+    "event_status_t": {
+        "event_state":"event_state_t",
+        "waiting_processes":"waiting_range_t"
     }
 }

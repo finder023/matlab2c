@@ -22,7 +22,7 @@ function [return_code] = SET_PARTITION_MODE(mode)
     end
 
     if mode == NORMAL
-        wakeup_waiting_proc(WT_PNORMAL);
+        wakeup_waiting_proc(WT_PNORMAL, []);
         part.scheduling = 1;
         if part.first_run == 0
             part.first_run = 1;
