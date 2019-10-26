@@ -379,6 +379,7 @@ class Matlab2CVisitor(MatlabVisitor):
         
         if rexpr.Type == 'nameExpr':
             assert len(rvals) > 0
+            # print(rvals)
             # name expr's first elem in right value must have type
             assert(rvals[0].Type != 'unknowType')
             # struct must in arinc_struct

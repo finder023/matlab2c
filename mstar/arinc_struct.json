@@ -26,7 +26,10 @@
     },
 
     "partition_t" : {
-        "status":"partition_status_t"
+        "status":"partition_status_t",
+        "scheduling": "int",
+        "first_run" : "int",
+        "sem_num":"int"
     },
 
     "partition_status_t":{
@@ -36,5 +39,17 @@
         "lock_level":"lock_level_t",
         "operating_mode":"operating_mode_t",
         "start_condition":"start_condition_t"
+    },
+
+    "sem_t" : {
+        "sem_name":"semaphore_name_t",
+        "sem_status":"semaphore_status_t",
+        "sem_id":"semaphore_id_t"
+    },
+
+    "semaphore_status_t" : {
+        "current_value":"semaphore_value_t",
+        "max_value":"semaphore_value_t",
+        "waiting_processes":"waiting_range_t"
     }
 }

@@ -1,0 +1,42 @@
+{
+    "create_semaphore": {
+        "semaphore_id":"semaphore_id_t*",
+        "return_code":"return_code_t*",
+        "semaphore_name":"semaphore_name_t",
+        "current_value":"semaphore_value_t",
+        "max_value":"semaphore_value_t",
+        "queuing_discipline":"queuing_discipline_t",
+        "current":"struct proc_struct*",
+        "get_sem_by_name":"sem_t*",
+        "alloc_sem":"sem_t*"
+    },
+
+    "wait_semaphore": {
+        "semaphore_id":"semaphore_id_t",
+        "return_code":"return_code_t*",
+        "time_out": "system_time_t",
+        "get_sem_by_id" : "sem_t*",
+        "current":"struct proc_struct*"
+    },
+
+    "signal_semaphore": {
+        "return_code":"return_code_t*",
+        "semaphore_id":"semaphore_id_t",
+        "get_sem_by_id":"sem_t*",
+        "select_waiting_proc":"struct proc_struct*"
+    },
+
+    "get_semaphore_id" : {
+        "semaphore_id":"semaphore_id_t*",
+        "return_code":"return_code_t*",
+        "semaphore_name":"semaphore_name_t",
+        "get_sem_by_name":"sem_t*"
+    },
+
+    "get_semaphore_status" : {
+        "semaphore_id":"semaphore_id_t",
+        "return_code":"return_code_t*",
+        "semaphore_status":"semaphore_status_t*",
+        "get_sem_by_id":"sem_t*"
+    }
+}

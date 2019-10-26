@@ -421,6 +421,22 @@ class AssignExpr(Expr):
             rvar = rexpr._vars[-1]
             
         elif rexpr.Type == 'function_call':
+            func_name = rexpr.Deps[0]
+            # some special operating..... ugly
+            if func_name.Name in inline_func:
+                rStr = rexpr.toStr()
+                lStr = lexpr.toStr()
+                # get only name, without type str
+                lrep = lStr.split(' ')[-1]
+                self.getIndentPrefix()
+                pre = self._indent_prefix
+                res = rStr.replace('proc', lrep)
+                lines = res.split('\n')
+                res = str()
+                for l in lines:
+                    res += pre + l + '\n'
+                return res.rstrip() + '\n'
+            
             rvar = rexpr._vars[0]
 
         elif rexpr.Type == 'nullExpr':
@@ -552,8 +568,7 @@ class FunctionCallExpr(Expr):
                 res += pre + 'list_del_init(&%s->run_link);\n' % proc
                 res += pre + 'set_wt_flag(%s, %s);\n' % (proc, flag)
                 if resources != 'NULL':
-                    res += pre + 'list_add_before(&%s->waiting_thread, \
-                            &%s->run_link);\n' % (resources, proc)
+                    res += pre + 'list_add_before(&%s->waiting_thread, &%s->run_link);\n' % (resources, proc)
                 return res
             
             if func_name == 'stop_timer':
@@ -563,7 +578,6 @@ class FunctionCallExpr(Expr):
                 res += pre + 'del_timer(timer);\n'
                 res += pre + 'clear_wt_flag(%s, WT_TIMER);\n' % proc
                 res += pre + 'kfree_timer(timer);\n'
-                res += pre + '%s->timer = NULL;\n' % proc
 
                 return res
 
@@ -576,6 +590,45 @@ class FunctionCallExpr(Expr):
 
                 return res
 
+            if func_name == 'wakeup_waiting_proc':
+                assert len(para_list) == 1
+                flag = para_list[0]
+                ind = ' ' * 4
+                res = pre + 'list_entry_t *le = part->proc_set.next;\n'
+                res += pre + 'struct proc_struct *proc;\n'
+                res += pre + 'while ( le != &part->proc_set ) {\n'
+                res += pre + ind + 'proc = le2proc(le, part_link);\n'
+                res += pre + ind + 'if ( proc->status.process_state == WAITING && test_wg_flag(proc, %s) ) {\n' % flag
+                res += pre + ind*2 + 'clear_wt_flag(proc, %s);\n' % flag
+                res += pre + ind*2 + 'list_del_init(&proc->run_link);\n'
+                res += pre + ind*2 + 'if ( proc->wait_state == 0 ) {\n'
+                res += pre + ind*3 + 'wakeup_proc(proc);\n'
+                res += pre + ind*2 + '}\n'
+                res += pre + ind + '}\n'
+                res += pre + ind + 'le = list_next(le);\n'
+                res += pre + '}\n'
+
+                return res
+
+            if func_name == 'add_sem':
+                assert len(para_list) == 2
+                part = para_list[0]
+                sem = para_list[1]
+
+                res = pre + 'list_add_after(&%s->all_sem, &%s->sem_link);\n' % (part, sem)
+                res += pre + '%s->sem_num = %s->sem_num + 1;\n' % (part, part)
+                
+                return res
+
+            if func_name == 'select_waiting_proc':
+                assert len(para_list) == 1
+                resources = para_list[0]
+
+                res = pre + 'list_entry_t *elem = %s->waiting_thread.next;\n' % resources
+                res += pre + 'struct proc_struct *proc = le2proc(elem, run_link);\n'
+                res += pre + 'list_del_init(&proc->run_link);\n'
+
+                return res
 
         res = self._indent_prefix + func_name
         res += '(' + paralist_str + ')' + tail_ + self._end 
