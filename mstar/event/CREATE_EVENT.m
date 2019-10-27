@@ -6,7 +6,7 @@ function [event_id, return_code] = CREATE_EVENT(event_name)
     end
     
     event = get_event_by_name(event_name);
-    if event == []
+    if event ~= []
         return_code = NO_ACTION;
         return;
     end

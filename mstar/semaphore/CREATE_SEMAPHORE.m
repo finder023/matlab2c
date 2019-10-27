@@ -6,7 +6,7 @@ function [semaphore_id, return_code] = CREATE_SEMAPHORE(semaphore_name, current_
     end
 
     sem = get_sem_by_name(semaphore_name);
-    if sem == []
+    if sem ~= []
         return_code = NO_ACTION;
         return;
     end

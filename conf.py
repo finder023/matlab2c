@@ -38,6 +38,14 @@ cvt_file = [
 #    "wait_event",
 #    "get_event_id",
 #    "get_event_status"
+
+#    # blackboard
+#    'create_blackboard',
+#    'display_blackboard',
+#    'read_blackboard',
+#    'clear_blackboard',
+#    'get_blackboard_id',
+#    'get_blackboard_status'
 ]
 
 inline_func = [

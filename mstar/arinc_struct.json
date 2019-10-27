@@ -29,7 +29,8 @@
         "status":"partition_status_t",
         "scheduling": "int",
         "first_run" : "int",
-        "sem_num":"int"
+        "sem_num":"int",
+        "blackboard_num":"int"
     },
 
     "partition_status_t":{
@@ -63,5 +64,20 @@
     "event_status_t": {
         "event_state":"event_state_t",
         "waiting_processes":"waiting_range_t"
+    },
+
+
+    "blackboard_t": {
+        "name":"blackboard_name_t",
+        "id":"blackboard_id_t",
+        "status":"blackboard_status_t",
+        "length":"message_size_t",
+        "buff":"message_addr_t"
+    },
+
+    "blackboard_status_t":{
+        "empty_indicator":"empty_indicator_t",
+        "max_message_size":"message_size_t",
+        "waiting_processes":"size_t"
     }
 }

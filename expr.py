@@ -552,7 +552,8 @@ class FunctionCallExpr(Expr):
                 assert len(para_list) == 2
                 proc = para_list[0]
                 timeout = para_list[1]
-                res = pre + 'timer_t *timer = kmalloc(sizeof(timer_t));\n'
+                res = pre + '// add_timer\n'
+                res += pre + 'timer_t *timer = kmalloc(sizeof(timer_t));\n'
                 res += pre + 'timer_init(timer, %s, %s);\n' % (proc, timeout)
                 res += pre + 'set_wt_flag(%s, WT_TIMER);\n' % (proc)
                 res += pre + 'add_timer(timer);\n'
@@ -564,7 +565,8 @@ class FunctionCallExpr(Expr):
                 proc = para_list[0]
                 flag = para_list[1]
                 resources = para_list[2]
-                res = pre + '%s->status.process_state = WAITING;\n' % proc
+                res = pre + '// set_proc_waiting\n'
+                res += pre + '%s->status.process_state = WAITING;\n' % proc
                 res += pre + 'list_del_init(&%s->run_link);\n' % proc
                 res += pre + 'set_wt_flag(%s, %s);\n' % (proc, flag)
                 if resources != 'NULL':
@@ -574,7 +576,8 @@ class FunctionCallExpr(Expr):
             if func_name == 'stop_timer':
                 assert(len(para_list) == 1)
                 proc = para_list[0]
-                res = pre + 'timer_t *timer = %s->timer;\n' % proc
+                res = pre + '// stop_timer\n'
+                res += pre + 'timer_t *timer = %s->timer;\n' % proc
                 res += pre + 'del_timer(timer);\n'
                 res += pre + 'clear_wt_flag(%s, WT_TIMER);\n' % proc
                 res += pre + 'kfree_timer(timer);\n'
@@ -584,7 +587,8 @@ class FunctionCallExpr(Expr):
             if func_name == 'set_proc_dormant':
                 assert len(para_list) == 1
                 proc = para_list[0]
-                res = pre + '%s->status.process_state = DORMANT;\n' % proc
+                res = pre + '// set_proc_dormant\n'
+                res += pre + '%s->status.process_state = DORMANT;\n' % proc
                 res += pre + 'list_del_init(&%s->run_link);\n' % proc
                 res += pre + 'list_add_before(&%s->part->dormant_set, &%s->run_link);\n' % (proc, proc)
 
@@ -603,7 +607,8 @@ class FunctionCallExpr(Expr):
                     link = 'run_link'
 
                 ind = ' ' * 4
-                res = pre + 'list_entry_t *le = %s.next;\n' % waitingSet
+                res = pre + '// wakeup_waiting_proc\n'
+                res += pre + 'list_entry_t *le = %s.next;\n' % waitingSet
                 res += pre + 'struct proc_struct *proc;\n'
                 res += pre + 'while ( le != &%s ) {\n' % waitingSet
                 res += pre + ind + 'proc = le2proc(le, %s);\n' % link
@@ -624,7 +629,8 @@ class FunctionCallExpr(Expr):
                 pres = para_list[0]
                 ind = ' ' * 4
 
-                res = pre + 'list_entry_t *le = %s->waiting_thread.next;\n' % pres 
+                res = pre + '// stop_all_timer\n'
+                res += pre + 'list_entry_t *le = %s->waiting_thread.next;\n' % pres 
                 res += pre + 'struct proc_struct *proc;\n'
                 res += pre + 'while ( le != &%s->waiting_thread ) {\n' % pres
                 res += pre + ind + 'proc = le2proc(le, run_link);\n'
@@ -644,7 +650,8 @@ class FunctionCallExpr(Expr):
                 part = para_list[0]
                 sem = para_list[1]
 
-                res = pre + 'list_add_after(&%s->all_sem, &%s->sem_link);\n' % (part, sem)
+                res = '// add_sem\n'
+                res += pre + 'list_add_after(&%s->all_sem, &%s->sem_link);\n' % (part, sem)
                 res += pre + '%s->sem_num = %s->sem_num + 1;\n' % (part, part)
                 
                 return res
@@ -654,7 +661,8 @@ class FunctionCallExpr(Expr):
                 part = para_list[0]
                 event = para_list[1]
 
-                res = pre + 'list_add_after(&%s->all_event, &%s->event_link);\n' % (part, event)
+                res = pre + '// add_event\n'
+                res += pre + 'list_add_after(&%s->all_event, &%s->event_link);\n' % (part, event)
                 res += pre + '%s->event_num = %s->event_num + 1;\n' % (part, part)
  
                 return res
@@ -663,7 +671,8 @@ class FunctionCallExpr(Expr):
                 assert len(para_list) == 1
                 resources = para_list[0]
 
-                res = pre + 'list_entry_t *elem = %s->waiting_thread.next;\n' % resources
+                res = pre + '// select_waiting_proc\n'
+                res += pre + 'list_entry_t *elem = %s->waiting_thread.next;\n' % resources
                 res += pre + 'struct proc_struct *proc = le2proc(elem, run_link);\n'
                 res += pre + 'list_del_init(&proc->run_link);\n'
 
