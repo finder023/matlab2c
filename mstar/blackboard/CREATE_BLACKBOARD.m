@@ -30,7 +30,7 @@ function [blackboard_id, return_code] = CREATE_BLACKBOARD(blackboard_name, max_m
     blackboard.status.max_message_size = max_message_size;
     blackboard.status.waiting_processes = 0;
     strcpy(blackboard.name, blackboard_name);
-    
+    add_blackboard(part, blackboard); 
     blackboard_id = blackboard.id;
     return_code = NO_ERROR;
 end

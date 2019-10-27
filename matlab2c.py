@@ -75,7 +75,11 @@ def main():
             if lfn not in cvt_file:
                 continue
             
-            assert lfn in module_conf
+            if lfn not in module_conf:
+                print(lfn)
+                print(module_conf)
+                assert lfn in module_conf
+            
             func_type = module_conf[lfn]
             
             mfn = os.path.join(module_path, fn + '.m')

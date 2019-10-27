@@ -46,6 +46,14 @@ cvt_file = [
 #    'clear_blackboard',
 #    'get_blackboard_id',
 #    'get_blackboard_status'
+
+    # buffer
+    'create_buffer',
+    'send_buffer',
+    'receive_buffer',
+    'get_buffer_id',
+    'get_buffer_status'
+
 ]
 
 inline_func = [
@@ -57,5 +65,15 @@ inline_func = [
     'add_sem',
     'select_waiting_proc',
     'add_event',
-    'stop_all_timer'
+    'stop_all_timer',
+    'add_blackboard',
+    'add_buffer',
+    'add_message',
+    'null_msg',
+    'remove_message'
+]
+
+ret_func = [
+    'select_waiting_proc',
+    'remove_message'
 ]

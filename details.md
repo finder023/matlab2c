@@ -73,3 +73,18 @@
 1. save next list_elem
 2. get proc by list_elem
 3. list_del_init
+
+### add message to msg set
+
+- `add_message(resources, msg)`
+  
+1. list add
+2. msg num ++
+
+### remove message
+
+- `remove_message(resources)`
+
+1. le = buffer.msg_set.next;
+2. list_del_init(le);
+3. msg = le2msg(le, msg_link);

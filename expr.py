@@ -3,7 +3,7 @@
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
-from conf import with_hcoding, inline_func
+from conf import with_hcoding, inline_func, ret_func
 
 class HierarchicalCoding(object):
     def __init__(self):
@@ -423,14 +423,21 @@ class AssignExpr(Expr):
         elif rexpr.Type == 'function_call':
             func_name = rexpr.Deps[0]
             # some special operating..... ugly
-            if func_name.Name in inline_func:
+            if func_name.Name in ret_func:
                 rStr = rexpr.toStr()
                 lStr = lexpr.toStr()
                 # get only name, without type str
                 lrep = lStr.split(' ')[-1]
                 self.getIndentPrefix()
                 pre = self._indent_prefix
-                res = rStr.replace('proc', lrep)
+                
+                if func_name.Name == 'select_waiting_proc':
+                    res = rStr.replace('proc', lrep)
+                elif func_name.Name == 'remove_message':
+                    res = rStr.replace('_msg', lrep)
+                else:
+                    raise TypeError('not supported ret func:', func_name.Name)
+                
                 lines = res.split('\n')
                 res = str()
                 for l in lines:
@@ -667,6 +674,28 @@ class FunctionCallExpr(Expr):
  
                 return res
 
+            if func_name == 'add_blackboard':
+                assert len(para_list) == 2
+                part = para_list[0]
+                bboard = para_list[1]
+
+                res = pre + '// add_blackboard\n'
+                res += pre + 'list_add_after(&%s->all_blackboard, &%s->bb_link);\n' % (part, bboard)
+                res += pre + '%s->blackboard_num = %s->blackboard_num + 1;\n' % (part, part)
+ 
+                return res
+
+            if func_name == 'add_buffer':
+                assert len(para_list) == 2
+                part = para_list[0]
+                buffer = para_list[1]
+
+                res = pre + '// add_buffer\n'
+                res += pre + 'list_add_after(&%s->all_buffer, &%s->buffer_link);\n' % (part, buffer)
+                res += pre + '%s->buffer_num = %s->buffer_num + 1;\n' % (part, part)
+
+                return res
+
             if func_name == 'select_waiting_proc':
                 assert len(para_list) == 1
                 resources = para_list[0]
@@ -677,6 +706,30 @@ class FunctionCallExpr(Expr):
                 res += pre + 'list_del_init(&proc->run_link);\n'
 
                 return res
+
+            if func_name == 'remove_message':
+                assert len(para_list) == 1
+                resources = para_list[0]
+
+                res = pre + '// remove_message\n'
+                res += pre + 'list_entry_t *le = %s->msg_set.next;\n'
+                res += pre + 'list_del_init(le);\n'
+                res += pre + '_msg = le2msg(le, msg_link);\n'
+
+                return res
+
+            if func_name == 'add_message':
+                assert len(para_list) == 2
+                pres = para_list[0]
+                msg = para_list[1]
+
+                res = pre + 'list_add_before(%s->msg_set, %s->msg_link);\n' % (pres, msg)
+                res += pre + '%s->status.nb_message = %s->status.nb_message + 1;\n' % (pres, pres)
+
+                return res
+
+            if func_name == 'empty_msg':
+                return 'NULL'
 
         res = self._indent_prefix + func_name
         res += '(' + paralist_str + ')' + tail_ + self._end 

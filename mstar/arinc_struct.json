@@ -30,7 +30,8 @@
         "scheduling": "int",
         "first_run" : "int",
         "sem_num":"int",
-        "blackboard_num":"int"
+        "blackboard_num":"int",
+        "buffer_num":"int"
     },
 
     "partition_status_t":{
@@ -79,5 +80,25 @@
         "empty_indicator":"empty_indicator_t",
         "max_message_size":"message_size_t",
         "waiting_processes":"size_t"
+    },
+
+    
+    "buffer_t": {
+        "status":"buffer_status_t",
+        "name":"buffer_name_t",
+        "id":"buffer_id_t",
+        "discipline":"queuing_discipline_t"
+    },
+
+    "buffer_status_t": {
+        "nb_message":"message_range_t",
+        "max_nb_message":"message_range_t",
+        "max_message_size":"message_size_t",
+        "waiting_processes":"size_t"
+    },
+
+    "message_t":{
+        "length":"size_t",
+        "buff":"void*"
     }
 }

@@ -424,7 +424,10 @@ class Matlab2CVisitor(MatlabVisitor):
                 lvals[-1].Type = rvals[-1].Type
                 
             elif rexpr.Type == 'funcallExpr' or rexpr.Type == 'function_call':
-                assert(rvals[0].Type != 'unknowType')
+                if rvals[0].Type == 'unknowType':
+                    print(rexpr)
+                    assert(rvals[0].Type != 'unknowType')
+                    
                 lvals[-1].Type = rvals[0].Type
 
             else:
