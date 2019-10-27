@@ -381,7 +381,9 @@ class Matlab2CVisitor(MatlabVisitor):
             assert len(rvals) > 0
             # print(rvals)
             # name expr's first elem in right value must have type
-            assert(rvals[0].Type != 'unknowType')
+            if rvals[0].Type == 'unknowType':
+                print(rexpr)
+                assert(rvals[0].Type != 'unknowType')
             # struct must in arinc_struct
             if len(rvals) > 1:
                 b_type = rvals[0].Type.strip('*')
@@ -427,7 +429,7 @@ class Matlab2CVisitor(MatlabVisitor):
                 if rvals[0].Type == 'unknowType':
                     print(rexpr)
                     assert(rvals[0].Type != 'unknowType')
-                    
+
                 lvals[-1].Type = rvals[0].Type
 
             else:

@@ -1,0 +1,38 @@
+{
+    "create_queuing_port":{
+        "id":"queuing_port_id_t*",
+        "return_code":"return_code_t*",
+        "name":"queuing_port_name_t",
+        "max_msg_size": "size_t",
+        "max_nb_msg":"size_t",
+        "port_direction":"port_direction_t",
+        "queuing_discipline":"queuing_discipline_t",
+        "get_queue_by_name":"queuing_port_t*",
+        "alloc_queuing_port":"queuing_port_t*",
+        "current": "struct proc_struct*"
+    },
+
+    "send_queuing_message": {
+        "return_code":"return_code_t*",
+        "id":"queuing_port_id_t",
+        "msg_addr":"system_addr_t",
+        "len":"size_t",
+        "time_out":"system_time_t",
+        "get_queue_by_id":"queuing_port_t*",
+        "alloc_message":"message_t",
+        "current":"struct proc_struct*",
+        "select_waiting_proc":"struct proc_struct*"
+    },
+
+    "receive_queuing_message": {
+        "len":"size_t*",
+        "return_code":"return_code_t*",
+        "id":"queuing_port_id_t",
+        "time_out":"system_time_t",
+        "message_addr":"system_addr_t",
+        "current":"struct proc_struct*",
+        "select_waiting_proc":"struct proc_struct*",
+        "get_queue_by_id":"queuing_port_t*",
+        "null_msg":"message_t*"
+    }
+}

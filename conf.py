@@ -38,7 +38,7 @@ cvt_file = [
 #    "wait_event",
 #    "get_event_id",
 #    "get_event_status"
-
+#
 #    # blackboard
 #    'create_blackboard',
 #    'display_blackboard',
@@ -46,14 +46,25 @@ cvt_file = [
 #    'clear_blackboard',
 #    'get_blackboard_id',
 #    'get_blackboard_status'
+#
+#    # buffer
+#    'create_buffer',
+#    'send_buffer',
+#    'receive_buffer',
+#    'get_buffer_id',
+#    'get_buffer_status'
+#
+#    # sampling port
+#    'create_sampling_port',
+#    'read_sampling_message',
+#    'write_sampling_message',
+#    'get_sampling_port_id',
+#    'get_sampling_port_status'
 
-    # buffer
-    'create_buffer',
-    'send_buffer',
-    'receive_buffer',
-    'get_buffer_id',
-    'get_buffer_status'
-
+    # queuing port
+    'create_queuing_port',
+    'send_queuing_message',
+    'receive_queuing_message'
 ]
 
 inline_func = [

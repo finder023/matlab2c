@@ -100,5 +100,37 @@
     "message_t":{
         "length":"size_t",
         "buff":"void*"
+    },
+
+    "sampling_port_t" :{
+        "status":"sampling_port_status",
+        "name":"sampling_port_name",
+        "id":"sampling_port_id",
+        "last_time_stamp":"system_time_t",
+        "buff":"void*",
+        "length":"size_t"
+    },
+
+    "sampling_port_status": {
+        "refresh_period": "system_time_t",
+        "max_message_size": "message_size_t",
+        "port_direction": "port_direction_t",
+        "last_msg_validity":"validity_t"
+    },
+
+
+    "queuing_port_t": {
+        "status": "queuing_port_status_t",
+        "name":"queuing_port_name_t",
+        "id":"queuing_port_id_t",
+        "discipline":"queuing_discipline_t"
+    },
+
+    "queuing_port_status_t": {
+        "nb_message":"message_range_t",
+        "max_nb_message":"message_range_t",
+        "max_message_size":"message_size_t",
+        "port_direction":"port_direction_t",
+        "waiting_process":"size_t"
     }
 }
