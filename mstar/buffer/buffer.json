@@ -1,0 +1,53 @@
+{
+    "create_buffer": {
+        "buffer_id":"buffer_id_t*",
+        "return_code":"return_code_t*",
+        "buffer_name":"buffer_name_t",
+        "max_message_size":"message_size_t",
+        "max_nb_message":"message_range_t",
+        "queuing_discipline":"queuing_discipline_t",
+        "alloc_buffer":"buffer_t*",
+        "current":"struct proc_struct*",
+        "get_buffer_by_name":"buffer_t*"
+    },
+
+    "send_buffer":{
+        "return_code":"return_code_t*",
+        "buffer_id":"buffer_id_t",
+        "message_addr":"system_addr_t",
+        "len":"size_t",
+        "time_out":"system_time_t",
+        "get_buffer_by_id":"buffer_t*",
+        "current":"struct proc_struct*",
+        "alloc_message":"message_t*",
+        "select_waiting_proc":"struct proc_struct*",
+        "null_msg":"message_t*"
+    },
+
+    "receive_buffer": {
+        "len":"size_t*",
+        "return_code":"return_code_t*",
+        "buffer_id":"buffer_id_t",
+        "time_out":"system_time_t",
+        "message_addr":"system_addr_t",
+        "get_buffer_by_id":"buffer_t*",
+        "null_msg":"message_t*",
+        "del_msg":"message_t*",
+        "select_waiting_proc":"struct proc_struct*"
+
+    },
+
+    "get_buffer_id": {
+        "buffer_id":"buffer_id_t*",
+        "return_code":"return_code_t*",
+        "buffer_name":"buffer_name_t",
+        "get_buffer_by_name":"buffer_t*"
+    },
+
+    "get_buffer_status":{
+        "buffer_status":"buffer_status_t*",
+        "buffer_id":"buffer_id_t",
+        "return_code":"return_code_t*",
+        "get_buffer_by_id":"buffer_t*"
+    }
+}

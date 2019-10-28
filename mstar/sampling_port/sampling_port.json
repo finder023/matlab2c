@@ -1,0 +1,45 @@
+{
+    "create_sampling_port": {
+        "sampling_port_id":"sampling_port_id_t*",
+        "return_code":"return_code_t*",
+        "name":"sampling_port_name_t",
+        "max_msg_size":"message_size_t",
+        "port_direction":"port_direction_t",
+        "refresh_period":"system_time_t",
+        "get_sample_by_name":"sampling_port_t*",
+        "current":"struct proc_struct*",
+        "alloc_sampling_port":"sampling_port_t*"
+    },
+
+    "read_sampling_message": {
+        "len":"size_t*",
+        "validity":"validity_t*",
+        "return_code":"return_code_t*",
+        "sampling_port_id":"sampling_port_id_t",
+        "msg_addr":"void*",
+        "get_sample_by_id":"sampling_port_t*"
+    },
+
+    "write_sampling_message": {
+        "return_code":"return_code_t*",
+        "sampling_port_id":"sampling_port_id_t",
+        "msg_addr":"void*",
+        "len":"size_t",
+        "get_sample_by_id":"sampling_port_t*",
+        "ticks":"system_time_t"
+    },
+
+    "get_sampling_port_id": {
+        "sampling_port_id":"sampling_port_id_t*",
+        "return_code":"return_code_t*",
+        "name":"sampling_port_name_t",
+        "get_sample_by_name":"sampling_port_t*"
+    },
+
+    "get_sampling_port_status": {
+        "sampling_port_id":"sampling_port_id_t",
+        "return_code":"return_code_t*",
+        "sampling_port_status":"sampling_port_status_t*",
+        "get_sample_by_id":"sampling_port_t*"
+    }
+}

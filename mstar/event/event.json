@@ -1,0 +1,44 @@
+{
+    "create_event": {
+        "event_id": "event_id_t*",
+        "return_code": "return_code_t*",
+        "event_name": "event_name_t",
+        "current": "struct proc_struct*",
+        "get_event_by_name": "event_t*",
+        "alloc_event": "event_t*"
+    },
+
+    "set_event": {
+        "return_code":"return_code_t*",
+        "event_id":"event_id_t",
+        "get_event_by_id":"event_t*"
+    },
+
+    "reset_event": {
+        "return_code":"return_code_t*",
+        "event_id":"event_id_t",
+        "get_event_by_id":"event_t*"
+    },
+
+    "wait_event": {
+        "return_code":"return_code_t*",
+        "event_id":"event_id_t",
+        "time_out":"system_time_t",
+        "get_event_by_id":"event_t*",
+        "current":"struct proc_struct*"
+    },
+
+    "get_event_id": {
+        "event_id":"event_id_t*",
+        "return_code":"return_code_t*",
+        "event_name":"event_name_t",
+        "get_event_by_name":"event_t*"
+    },
+
+    "get_event_status": {
+        "event_id":"event_id_t",
+        "return_code":"return_code_t*",
+        "event_status":"event_status_t*",
+        "get_event_by_id":"event_t*"
+    }
+}

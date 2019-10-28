@@ -1,0 +1,86 @@
+{
+    "create_process" : {
+        "pid": "process_id_t*",
+        "return_code": "return_code_t*",
+        "current": "struct proc_struct*",
+
+        "attr": "process_attributes_t*",
+
+        "alloc_proc": "struct proc_struct*"
+    },
+
+    "set_priority" : {
+        "return_code":"return_code_t*",
+        "process_id": "process_id_t",
+        "priority": "priority_t",
+        "find_proc": "struct proc_struct*"
+    },
+
+    "suspend_self" : {
+        "return_code" : "return_code_t*",
+        "time_out" : "system_time_t",
+        "current": "struct proc_struct*"
+    },
+
+    "suspend" : {
+        "return_code": "return_code_t*",
+        "current": "struct proc_struct*",
+        "find_proc":"struct proc_struct*",
+        "process_id":"process_id_t"
+    },
+
+    "resume":{
+        "return_code":"return_code_t*",
+        "process_id":"process_id_t",
+        "find_proc":"struct proc_struct*"
+    },
+
+    "stop_self":{
+        "current":"struct proc_struct*"
+    },
+
+    "stop" : {
+        "return_code":"return_code_t*",
+        "process_id":"process_id_t",
+        "find_proc":"struct proc_struct*"
+    },
+
+    "start": {
+        "return_code":"return_code_t*",
+        "process_id":"process_id_t",
+        "find_proc":"struct proc_struct*"
+    },
+
+    "lock_preemption": {
+        "lock_level":"lock_level_t*",
+        "return_code":"return_code_t*",
+        "current":"struct proc_struct*"
+    },
+
+    "unlock_preemption" : {
+        "lock_level":"lock_level_t*",
+        "return_code":"return_code_t*",
+        "current":"struct proc_struct*"
+    },
+
+    "get_my_id": {
+        "process_id":"process_id_t*",
+        "return_code":"return_code_t*",
+        "current":"struct proc_struct*"
+    },
+
+    "get_process_id": {
+        "process_id":"process_id_t*",
+        "return_code":"return_code_t*",
+        "process_name":"process_name_t",
+        "find_proc_name":"struct proc_struct*"
+    },
+
+    "get_process_status":{
+        "return_code":"return_code_t*",
+        "process_status":"process_status_t*",
+        "process_id":"process_id_t",
+        "find_proc":"struct proc_struct*"
+    }
+
+}

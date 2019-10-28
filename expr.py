@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 
 from abc import ABCMeta, abstractmethod
-from copy import copy
+from copy import deepcopy
 
-from conf import with_hcoding
+from conf import with_hcoding, inline_func, ret_func
 
 class HierarchicalCoding(object):
     def __init__(self):
@@ -30,9 +30,10 @@ class HierarchicalCoding(object):
         return self._indent_str * self.level
 
 class Var(object):
-    def __init__(self, name_=str(), type_=str()):
-        self._name = name_ 
-        self._type = type_ 
+    def __init__(self, name_=str(), type_=str(), new_=False):
+        self._name = name_
+        self._type = type_
+        self._is_new = new_ 
     
     def __repr__(self):
         return 'Var({0._name!r}: {0._type!r})'.format(self)
@@ -66,6 +67,9 @@ class Var(object):
     def isPtr(self) -> bool:
         return self._type.endswith('*')
 
+    def isNew(self) -> bool:
+        return self._is_new
+
 class Expr():
     def __init__(self, type_=str(), name_=str(), deps_=list(), vars_=list()):
         self._name = name_
@@ -84,24 +88,25 @@ class Expr():
 
         # merge dep vars
         self.mergeDepVars()
+#        if (type_ == 'global_define_list'):
+#            print(vars_, self._vars)
 
     def __repr__(self):
         self._dep2str()
         if len(self._name) != 0 and len(self._deps) != 0:
-            return '<type:{0._type}, name:{0._name}, deps:{0._dep_str}>'\
-                                                                .format(self)
+            return '<Type:{0._type!r}, Name:{0._name!r}'.format(self).strip() +\
+                        ', Deps:' + self._dep_str + '>'
         if len(self._deps) != 0 and len(self._name) == 0:
-            return '<type:{0._type}, deps:{0._dep_str}>'.format(self)
+            return '<Type:{0._type!r}'.format(self).strip() +\
+                        ', Deps:' + self._dep_str + '>'
         if len(self._deps) == 0 and len(self._name) != 0:
-            return '<type:{0._type}, name:{0._name}>'.format(self)
-        return '<type:{0._type}>'.format(self)
+            return '<Type:{0._type!r}, Name:{0._name!r}>'.format(self)
+        return '<Type:{0._type!r}>'.format(self)
 
     def __str__(self):
         return self.__repr__()
 
-
     def _dep2str(self):
-        # self._dep_str = ','.join(self._deps)
         self._dep_str = str(self._deps)
 
     @property
@@ -189,7 +194,7 @@ class Expr():
                     _vars.append(var_)
         
         # if len(_vars) > 0: print('mergeRes:', _vars)
-        self._vars = _vars
+        self._vars = self._vars + _vars
 
 # digit, truth_value, nameExpr, 
 class NormalExpr(Expr):
@@ -198,6 +203,8 @@ class NormalExpr(Expr):
         super().__init__(name_=name_, type_=type_, deps_=deps_, vars_=vars_)
         self.sub_expr = subexpr_
         self.indent_level = indent_
+        #if type_ == 'global_define_list':
+        #    print(self._vars)
 
     
     def toStr(self):
@@ -216,24 +223,24 @@ class NormalExpr(Expr):
 
         # function call, function declare
         elif self.Type == 'paralist':
-            return str()
+            code_list = list()
+            for dep in self.Deps:
+                code_list.append(dep.toStr())
+            return ', '.join(code_list) 
 
         elif self.Type == 'global_define_list':
-            if len(self.Deps) == 0:
+            if len(self._vars) == 0:
                 return str()
 
-            global_var_list = list()            
-            for dep in self.Deps:
-                assert len(dep._vars) == 1
-                var = dep._vars[0]
+            global_var_list = list()
+            for var in self._vars:
                 global_var_list.append('extern ' + var.Type + ' ' + var.Name)
-
             if not self.sub_expr:
                 self.getIndentPrefix()
 
             res = self._indent_prefix
             res += (';\n' + self._indent_prefix).join(global_var_list)
-            return res + ';' + self._end
+            return res + ';' + self._end.strip('\n')
             
         elif self.Type == 'com_statement':
             if len(self.Deps) == 0:
@@ -242,9 +249,10 @@ class NormalExpr(Expr):
             # do not need call getIndentPrefix()
             com_state_list = list() 
             for dep in self.Deps:
-                com_state_list.append(dep.toStr())
+                codes = dep.toStr()
+                com_state_list.append(codes)
 
-            return '\n'.join(com_state_list)
+            return ''.join(com_state_list)
         
         elif self.Type == 'digit':
             return self.Name
@@ -280,7 +288,8 @@ class NormalExpr(Expr):
             res = global_str + '\n'
             res += statement_str
             return res
-
+        
+        # this is important, nameExpr
         elif self.Type == 'nameExpr':
             if not self.sub_expr:
                 self.getIndentPrefix()
@@ -295,6 +304,11 @@ class NormalExpr(Expr):
                 var_list.append(dep._vars[0])
 
             res = str()
+            # new_var, need define
+            if len(var_list) == 1 and var_list[0].isNew():
+                var = var_list[0]
+                res += var.Type + ' '
+
             for var in var_list:
                 res += var.Name
                 if var.isPtr():
@@ -350,6 +364,8 @@ class FunctionDeclareExpr(Expr):
 
         para_str = ', '.join(c_para_list)
 
+        # add do_ prefix, and lower func name
+        name_str = 'do_' + name_str.lower()
         res = 'void ' + name_str + '( '
         res += para_str + ')'
         return res
@@ -373,7 +389,7 @@ class FunctionExpr(Expr):
         func_str = func_expr.toStr()
         state_str = state_expr.toStr()
 
-        res = self._indent_prefix + func_str + ' {\n\n'
+        res = self._indent_prefix + func_str + ' {\n'
         res += state_str + '}'
         return res + self._end + '\n'
 
@@ -389,21 +405,79 @@ class AssignExpr(Expr):
         assert len(self.Deps) == 2
         # print('AssignExpr: ', self)
 
-        left_var:Var = self.Deps[0]._vars[-1]
-        right_var:Var = self.Deps[1]._vars[-1]
+        lexpr = self.Deps[0]
+        rexpr = self.Deps[1]
+        
+        if lexpr.Type == 'nameExpr':
+            lvar = lexpr._vars[-1]
+        
+        elif lexpr.Type == 'functino_call':
+            lvar = lexpr._vars[0]
+        
+        else:
+            raise TypeError('not supported ltype in assign tostr,' , str(lexpr))
+        
+        if rexpr.Type == 'nameExpr':
+            rvar = rexpr._vars[-1]
+            
+        elif rexpr.Type == 'function_call':
+            func_name = rexpr.Deps[0]
+            # some special operating..... ugly
+            if func_name.Name in ret_func:
+                rStr = rexpr.toStr()
+                lStr = lexpr.toStr()
+                # get only name, without type str
+                lrep = lStr.split(' ')[-1]
+                self.getIndentPrefix()
+                pre = self._indent_prefix
+                
+                if func_name.Name == 'select_waiting_proc':
+                    res = rStr.replace('proc', lrep)
+                elif func_name.Name == 'remove_message':
+                    res = rStr.replace('_msg', lrep)
+                else:
+                    raise TypeError('not supported ret func:', func_name.Name)
+                
+                lines = res.split('\n')
+                res = str()
+                for l in lines:
+                    res += pre + l + '\n'
+                return res.rstrip() + '\n'
+            
+            rvar = rexpr._vars[0]
 
-        left_str = self.Deps[0].toStr()
-        right_str = self.Deps[1].toStr()
+        elif rexpr.Type == 'nullExpr':
+            rvar = rexpr._vars[0]
+
+        elif rexpr.Type == 'digit':
+            rvar = rexpr._vars[0]
+
+        elif rexpr.Type == 'binaryExpr':
+            rvar = rexpr._vars[-1]
+        
+        else:
+            raise TypeError('not supported rtype in assign tostr, ', str(rexpr))
+        
+        
+        left_str = lexpr.toStr()
+        right_str = rexpr.toStr()
 
         if not self.sub_expr:
             self.getIndentPrefix()
 
-        ptrStar = str()
+        lptrStar = str()
+        rptrStar = str()
 
-        if left_var.isPtr() and right_var.Type == 'marco':
-            ptrStar = '*'
-        res = self._indent_prefix + ptrStar + left_str + ' = '
-        res += right_str + ';' + self._end
+        if lvar.isPtr() and rvar.Type == 'marco':
+            lptrStar = '*'
+        elif lvar.isPtr() and not rvar.isPtr():
+            lptrStar = '*'
+        elif not lvar.isPtr() and rvar.isPtr():
+            rptrStar = '*'
+
+        
+        res = self._indent_prefix + lptrStar + left_str + ' = '
+        res += rptrStar + right_str + ';' + self._end
         return res
 
 class UnaryExpr(Expr):
@@ -461,7 +535,6 @@ class FunctionCallExpr(Expr):
     def toStr(self):
         assert(len(self.Deps) == 2)
 
-
         func_name_expr = self.Deps[0]
         paralist_expr = self.Deps[1]
 
@@ -470,20 +543,212 @@ class FunctionCallExpr(Expr):
         if func_name_expr is not None:
             func_name = func_name_expr.toStr() 
 
-        if paralist_expr is not None:
-            para_var_str_list = list()
-            para_vars = paralist_expr._vars
-            
-            for var in para_vars:
-                para_var_str_list.append(var.Name)
-            
-            paralist_str = ', '.join(para_var_str_list)
-
+        tail_ = str()
         if not self.sub_expr:
             self.getIndentPrefix()
+            tail_ = ';'
+        
+        # function call 
+        if paralist_expr is not None:
+            paralist_str = paralist_expr.toStr()    
+        
+        if func_name in inline_func:
+            para_list = paralist_str.split(', ')
+            pre = self._indent_prefix
+            if func_name == 'add_timer':
+                assert len(para_list) == 2
+                proc = para_list[0]
+                timeout = para_list[1]
+                res = pre + '// add_timer\n'
+                res += pre + 'timer_t *timer = kmalloc(sizeof(timer_t));\n'
+                res += pre + 'timer_init(timer, %s, %s);\n' % (proc, timeout)
+                res += pre + 'set_wt_flag(%s, WT_TIMER);\n' % (proc)
+                res += pre + 'add_timer(timer);\n'
+                res += pre + '%s->timer = timer;\n' % (proc)
+                return res
+
+            if func_name == 'set_proc_waiting':
+                assert len(para_list) == 3
+                proc = para_list[0]
+                flag = para_list[1]
+                resources = para_list[2]
+                res = pre + '// set_proc_waiting\n'
+                res += pre + '%s->status.process_state = WAITING;\n' % proc
+                res += pre + 'list_del_init(&%s->run_link);\n' % proc
+                res += pre + 'set_wt_flag(%s, %s);\n' % (proc, flag)
+                if resources != 'NULL':
+                    res += pre + 'list_add_before(&%s->waiting_thread, &%s->run_link);\n' % (resources, proc)
+                return res
+            
+            if func_name == 'stop_timer':
+                assert(len(para_list) == 1)
+                proc = para_list[0]
+                res = pre + '// stop_timer\n'
+                res += pre + 'timer_t *timer = %s->timer;\n' % proc
+                res += pre + 'del_timer(timer);\n'
+                res += pre + 'clear_wt_flag(%s, WT_TIMER);\n' % proc
+                res += pre + 'kfree_timer(timer);\n'
+
+                return res
+
+            if func_name == 'set_proc_dormant':
+                assert len(para_list) == 1
+                proc = para_list[0]
+                res = pre + '// set_proc_dormant\n'
+                res += pre + '%s->status.process_state = DORMANT;\n' % proc
+                res += pre + 'list_del_init(&%s->run_link);\n' % proc
+                res += pre + 'list_add_before(&%s->part->dormant_set, &%s->run_link);\n' % (proc, proc)
+
+                return res
+
+            if func_name == 'wakeup_waiting_proc':
+                assert len(para_list) == 2
+                flag = para_list[0]
+                resptr = para_list[1]
+
+                if resptr == 'NULL':
+                    waitingSet = 'part->proc_set'
+                    link = 'part_link'
+                else:
+                    waitingSet = resptr + '->waiting_thread'
+                    link = 'run_link'
+
+                ind = ' ' * 4
+                res = pre + '// wakeup_waiting_proc\n'
+                res += pre + 'list_entry_t *le = %s.next;\n' % waitingSet
+                res += pre + 'struct proc_struct *proc;\n'
+                res += pre + 'while ( le != &%s ) {\n' % waitingSet
+                res += pre + ind + 'proc = le2proc(le, %s);\n' % link
+                res += pre + ind + 'if ( proc->status.process_state == WAITING && test_wg_flag(proc, %s) ) {\n' % flag
+                res += pre + ind*2 + 'clear_wt_flag(proc, %s);\n' % flag
+                res += pre + ind*2 + 'list_del(&proc->run_link);\n'
+                res += pre + ind*2 + 'if ( proc->wait_state == 0 ) {\n'
+                res += pre + ind*3 + 'wakeup_proc(proc);\n'
+                res += pre + ind*2 + '}\n'
+                res += pre + ind + '}\n'
+                res += pre + ind + 'le = list_next(le);\n'
+                res += pre + '}\n'
+
+                return res
+
+            if func_name == 'stop_all_timer':
+                assert len(para_list) == 1
+                pres = para_list[0]
+                ind = ' ' * 4
+
+                res = pre + '// stop_all_timer\n'
+                res += pre + 'list_entry_t *le = %s->waiting_thread.next;\n' % pres 
+                res += pre + 'struct proc_struct *proc;\n'
+                res += pre + 'while ( le != &%s->waiting_thread ) {\n' % pres
+                res += pre + ind + 'proc = le2proc(le, run_link);\n'
+                res += pre + ind + 'if ( proc->status.process_state == WAITING && test_wg_flag(proc, WT_TIMER) ) {\n'
+                res += pre + ind*2 + 'clear_wt_flag(proc, WT_TIMER);\n'
+                res += pre + ind*2 + 'timer_t* timer = proc->timer;\n'
+                res += pre + ind*2 + 'del_timer(timer);\n'
+                res += pre + ind*2 + 'kfree(timer);\n'
+                res += pre + ind + '}\n'
+                res += pre + ind + 'le = list_next(le);\n'
+                res += pre + '}\n'
+
+                return res
+
+            if func_name == 'add_sem':
+                assert len(para_list) == 2
+                part = para_list[0]
+                sem = para_list[1]
+
+                res = '// add_sem\n'
+                res += pre + 'list_add_after(&%s->all_sem, &%s->sem_link);\n' % (part, sem)
+                res += pre + '%s->sem_num = %s->sem_num + 1;\n' % (part, part)
+                
+                return res
+
+            if func_name == 'add_event':
+                assert len(para_list) == 2
+                part = para_list[0]
+                event = para_list[1]
+
+                res = pre + '// add_event\n'
+                res += pre + 'list_add_after(&%s->all_event, &%s->event_link);\n' % (part, event)
+                res += pre + '%s->event_num = %s->event_num + 1;\n' % (part, part)
+ 
+                return res
+
+            if func_name == 'add_blackboard':
+                assert len(para_list) == 2
+                part = para_list[0]
+                bboard = para_list[1]
+
+                res = pre + '// add_blackboard\n'
+                res += pre + 'list_add_after(&%s->all_blackboard, &%s->bb_link);\n' % (part, bboard)
+                res += pre + '%s->blackboard_num = %s->blackboard_num + 1;\n' % (part, part)
+ 
+                return res
+
+            if func_name == 'add_buffer':
+                assert len(para_list) == 2
+                part = para_list[0]
+                buffer = para_list[1]
+
+                res = pre + '// add_buffer\n'
+                res += pre + 'list_add_after(&%s->all_buffer, &%s->buffer_link);\n' % (part, buffer)
+                res += pre + '%s->buffer_num = %s->buffer_num + 1;\n' % (part, part)
+
+                return res
+
+            if func_name == 'select_waiting_proc':
+                assert len(para_list) == 1
+                resources = para_list[0]
+
+                res = pre + '// select_waiting_proc\n'
+                res += pre + 'list_entry_t *elem = %s->waiting_thread.next;\n' % resources
+                res += pre + 'struct proc_struct *proc = le2proc(elem, run_link);\n'
+                res += pre + 'list_del_init(&proc->run_link);\n'
+
+                return res
+
+            if func_name == 'remove_message':
+                assert len(para_list) == 1
+                resources = para_list[0]
+
+                res = pre + '// remove_message\n'
+                res += pre + 'list_entry_t *le = %s->msg_set.next;\n'
+                res += pre + 'list_del_init(le);\n'
+                res += pre + '_msg = le2msg(le, msg_link);\n'
+
+                return res
+
+            if func_name == 'add_message':
+                assert len(para_list) == 2
+                pres = para_list[0]
+                msg = para_list[1]
+
+                res = pre + 'list_add_before(%s->msg_set, %s->msg_link);\n' % (pres, msg)
+                res += pre + '%s->status.nb_message = %s->status.nb_message + 1;\n' % (pres, pres)
+
+                return res
+
+            if func_name == 'empty_msg':
+                return 'NULL'
+
+            if func_name == 'clear_message_set':
+                assert len(para_list) == 1
+                pres = para_list[0]
+
+                ind = ' ' * 4
+                res = pre + 'list_entry_t* le = %s->msg_set.next;\n' % pres
+                res += pre + 'message_t *msg = NULL;\n'
+                res += pre + 'while ( le != &%s->msg_set ) {\n' % pres
+                res += pre + ind + 'list_del(le);\n'
+                res += pre + ind + 'msg = le2msg(le, msg_link);\n'
+                res += pre + ind + 'free_message(msg);\n'
+                res += pre + ind + 'le = list_next(le);\n'
+                res += pre + '}\n'
+
+                return res
 
         res = self._indent_prefix + func_name
-        res += '(' + paralist_str + ')' + self._end 
+        res += '(' + paralist_str + ')' + tail_ + self._end 
 
         return res
 
@@ -528,11 +793,13 @@ class WhileExpr(Expr):
 
         res = self._indent_prefix + 'while( ' + cond_str
         res += ') {\n' + com_str + self._indent_prefix + '}'
-        return res + self._end
+        return res + self._end + '\n'
 
 class ElseIfExpr(Expr):
     def __init__(self, cond_=Expr(), com_=Expr(), subexpr_=False,
                     indent_=HierarchicalCoding(), vars_=list()):
+        # print(com_)
+        # print(cond_)
         super().__init__(type_='elseif_state', deps_=[cond_, com_], vars_=vars_)
         self.sub_expr = subexpr_
         self.indent_level = indent_
@@ -554,9 +821,9 @@ class ElseIfExpr(Expr):
         if not self.sub_expr:
             self.getIndentPrefix()
 
-        res = self._indent_prefix + 'else if ( ' + cond_str
+        res = '\n' + self._indent_prefix + 'else if ( ' + cond_str
         res += ') {\n' + com_str + self._indent_prefix + '}'
-        return res + self._end
+        return res + self._end.strip('\n')
 
 class ElseExpr(Expr):
     def __init__(self, com_=Expr(), subexpr_=False,
@@ -573,30 +840,31 @@ class ElseExpr(Expr):
         if com_expr is not None:
             com_str = com_expr.toStr()
 
-        self.getIndentPrefix()
+        if not self.sub_expr:
+            self.getIndentPrefix()
         
-        res = self._indent_prefix + 'else {\n'
+        res = '\n' + self._indent_prefix + 'else {\n'
         res += com_str + self._indent_prefix + '}'
-        return res + self._end
+        return res + self._end.strip('\n')
 
 
 class IfExpr(Expr):
-    def __init__(self, expr_=Expr(), com_=Expr(), elseif_=Expr(), else_=Expr(),
+    def __init__(self, expr_=Expr(), com_=Expr(), elseif_=list(), else_=Expr(),
                     subexpr_=False, indent_=HierarchicalCoding(), 
                     vars_=list()):
-        super().__init__(type_='if_state', deps_=[expr_, com_, elseif_, else_],
+        super().__init__(type_='if_state', deps_=[expr_, com_, else_] + elseif_,
                             vars_=vars_)
         self.sub_expr = subexpr_
         self.indent_level = indent_
 
     def toStr(self):
-        assert len(self.Deps) == 4
+        assert len(self.Deps) >= 3
 
         if_cond_expr = self.Deps[0]
         if_com_expr = self.Deps[1]
-        elseif_expr = self.Deps[2]
-        else_expr = self.Deps[3]
-
+        else_expr = self.Deps[2]
+        elseif_expr_list = self.Deps[3:]
+        
         if_cond_str, if_com_str, elseif_str, else_str = '', '', '', ''
         if if_cond_expr is not None:
             if_cond_str = if_cond_expr.toStr()
@@ -604,8 +872,9 @@ class IfExpr(Expr):
         if if_com_expr is not None:
             if_com_str = if_com_expr.toStr()
 
-        if elseif_expr is not None:
-            elseif_str = elseif_expr.toStr()
+        
+        for expr in elseif_expr_list:
+            elseif_str += expr.toStr()
 
         if else_expr is not None:
             else_str = else_expr.toStr()
@@ -622,7 +891,11 @@ class IfExpr(Expr):
         res += elseif_str
         res += else_str
 
-        return res + self._end
+        if res.endswith(self._end.strip()):
+            return res + '\n'
+        else:
+            return res + self._end
+
 
 class ElementExpr(Expr):
     def __init__(self, name_=Expr(), location_=None, subexpr_=True,

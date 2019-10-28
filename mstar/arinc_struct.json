@@ -1,0 +1,136 @@
+{
+    "struct proc_struct": {
+        "status": "process_status_t",
+        "timer": "timer_t*",
+        "part": "partition_t*",
+        "pid": "process_id_t",
+        "wait_state":"uint32_t",
+        "time_slice": "system_time_t"
+    },
+
+    "process_status_t" : {
+        "attributes": "process_attributes_t",
+        "process_state": "process_state_t",
+        "current_priority": "priority_t",
+        "deadline_time": "system_time_t"
+    },
+
+    "process_attributes_t": {
+        "period" : "system_time_t",
+        "time_capacity": "system_time_t",
+        "entry_point": "system_address_t",
+        "stack_size" : "stack_size_t",
+        "base_priority": "priority_t",
+        "deadline": "deadline_t",
+        "name": "name_t"
+    },
+
+    "partition_t" : {
+        "status":"partition_status_t",
+        "scheduling": "int",
+        "first_run" : "int",
+        "sem_num":"int",
+        "blackboard_num":"int",
+        "buffer_num":"int"
+    },
+
+    "partition_status_t":{
+        "period":"system_time_t",
+        "duration":"system_time_t",
+        "identifier":"partition_id_t",
+        "lock_level":"lock_level_t",
+        "operating_mode":"operating_mode_t",
+        "start_condition":"start_condition_t"
+    },
+
+    "sem_t" : {
+        "sem_name":"semaphore_name_t",
+        "sem_status":"semaphore_status_t",
+        "sem_id":"semaphore_id_t"
+    },
+
+    "semaphore_status_t" : {
+        "current_value":"semaphore_value_t",
+        "max_value":"semaphore_value_t",
+        "waiting_processes":"waiting_range_t"
+    },
+
+    
+    "event_t": {
+        "status":"event_status_t",
+        "event_id": "event_id_t",
+        "event_name": "event_name_t"
+    },
+
+    "event_status_t": {
+        "event_state":"event_state_t",
+        "waiting_processes":"waiting_range_t"
+    },
+
+
+    "blackboard_t": {
+        "name":"blackboard_name_t",
+        "id":"blackboard_id_t",
+        "status":"blackboard_status_t",
+        "length":"message_size_t",
+        "buff":"message_addr_t"
+    },
+
+    "blackboard_status_t":{
+        "empty_indicator":"empty_indicator_t",
+        "max_message_size":"message_size_t",
+        "waiting_processes":"size_t"
+    },
+
+    
+    "buffer_t": {
+        "status":"buffer_status_t",
+        "name":"buffer_name_t",
+        "id":"buffer_id_t",
+        "discipline":"queuing_discipline_t"
+    },
+
+    "buffer_status_t": {
+        "nb_message":"message_range_t",
+        "max_nb_message":"message_range_t",
+        "max_message_size":"message_size_t",
+        "waiting_processes":"size_t"
+    },
+
+    "message_t":{
+        "length":"size_t",
+        "buff":"void*"
+    },
+
+    "sampling_port_t" :{
+        "status":"sampling_port_status",
+        "name":"sampling_port_name",
+        "id":"sampling_port_id",
+        "last_time_stamp":"system_time_t",
+        "buff":"void*",
+        "length":"size_t"
+    },
+
+    "sampling_port_status": {
+        "refresh_period": "system_time_t",
+        "max_message_size": "message_size_t",
+        "port_direction": "port_direction_t",
+        "last_msg_validity":"validity_t"
+    },
+
+
+    "queuing_port_t": {
+        "status": "queuing_port_status_t",
+        "name":"queuing_port_name_t",
+        "id":"queuing_port_id_t",
+        "discipline":"queuing_discipline_t"
+    },
+
+    "queuing_port_status_t": {
+        "nb_message":"message_range_t",
+        "max_nb_message":"message_range_t",
+        "max_message_size":"message_size_t",
+        "port_direction":"port_direction_t",
+        "waiting_process":"size_t"
+    }
+}

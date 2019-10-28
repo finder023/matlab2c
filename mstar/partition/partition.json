@@ -1,0 +1,13 @@
+{
+    "get_partition_status": {
+        "status":"partition_status_t*",
+        "return_code":"return_code_t*",
+        "current":"struct proc_struct*"
+    },
+
+    "set_partition_mode" :{
+        "return_code":"return_code_t*",
+        "mode": "partition_mode_t",
+        "current":"struct proc_struct*"
+    }
+}
