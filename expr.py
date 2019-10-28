@@ -731,6 +731,22 @@ class FunctionCallExpr(Expr):
             if func_name == 'empty_msg':
                 return 'NULL'
 
+            if func_name == 'clear_message_set':
+                assert len(para_list) == 1
+                pres = para_list[0]
+
+                ind = ' ' * 4
+                res = pre + 'list_entry_t* le = %s->msg_set.next;\n' % pres
+                res += pre + 'message_t *msg = NULL;\n'
+                res += pre + 'while ( le != &%s->msg_set ) {\n' % pres
+                res += pre + ind + 'list_del(le);\n'
+                res += pre + ind + 'msg = le2msg(le, msg_link);\n'
+                res += pre + ind + 'free_message(msg);\n'
+                res += pre + ind + 'le = list_next(le);\n'
+                res += pre + '}\n'
+
+                return res
+
         res = self._indent_prefix + func_name
         res += '(' + paralist_str + ')' + tail_ + self._end 
 

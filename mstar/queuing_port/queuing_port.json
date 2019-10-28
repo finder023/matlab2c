@@ -34,5 +34,25 @@
         "select_waiting_proc":"struct proc_struct*",
         "get_queue_by_id":"queuing_port_t*",
         "null_msg":"message_t*"
+    },
+
+    "get_queuing_port_id": {
+        "id":"queuing_port_id_t*",
+        "return_code":"return_code_t*",
+        "name":"queuing_port_name_t",
+        "get_queue_by_name":"queuing_port_t*"
+    },
+
+    "get_queuing_port_status": {
+        "id":"queuing_port_id_t",
+        "return_code":"return_code_t*",
+        "status":"queuing_port_status_t*",
+        "get_queue_by_id":"queuing_port_t*"
+    },
+
+    "clear_queuing_port": {
+        "return_code":"return_code_t*",
+        "id":"queuing_port_id_t",
+        "get_queue_by_id":"queuing_port_t*"
     }
 }
