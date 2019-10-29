@@ -1,4 +1,4 @@
-function [id, return_code] = CREATE_QUEUING_PORT(name, max_msg_size, max_nb_msg, port_directioin, queuing_discipline)
+function [id, return_code] = CREATE_QUEUING_PORT(name, max_msg_size, max_nb_msg, port_direction, queuing_discipline)
     if nr_queuing_port >= MAX_NUMBER_OF_QUEUING_PORTS
         return_code = INVALID_CONFIG;
         return;
@@ -20,7 +20,7 @@ function [id, return_code] = CREATE_QUEUING_PORT(name, max_msg_size, max_nb_msg,
         return;
     end
 
-    if port_directioin ~= SOURCE && port_directioin ~= DESTINATION
+    if port_direction ~= SOURCE && port_direction ~= DESTINATION
         return_code = INVALID_CONFIG;
         return;
     end

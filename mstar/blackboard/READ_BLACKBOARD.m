@@ -32,7 +32,7 @@ function [len, return_code] = READ_BLACKBOARD(blackboard_id, time_out, message_a
         return_code = NO_ERROR;
     else
         set_proc_waiting(proc, WT_BBOARD, bboard);
-        add_timer(proc, timeout);
+        add_timer(proc, time_out);
         bboard.status.waiting_processes = bboard.status.waiting_processes + 1;
         
         schedule();

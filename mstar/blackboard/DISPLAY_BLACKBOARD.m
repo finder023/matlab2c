@@ -1,5 +1,6 @@
 function [return_code] = DISPLAY_BLACKBOARD(blackboard_id, message_addr, len)
     bboard = get_blackboard_by_id(blackboard_id);
+    proc = current;
     if bboard == []
         return_code = INVALID_PARAM;
         return;

@@ -1,5 +1,6 @@
 function [len, return_code] = RECEIVE_BUFFER(buffer_id, time_out, message_addr)
     buffer = get_buffer_by_id(buffer_id);
+    proc = current;
     if buffer == []
         return_code = INVALID_PARAM;
         return;
@@ -12,7 +13,7 @@ function [len, return_code] = RECEIVE_BUFFER(buffer_id, time_out, message_addr)
 
     msg = null_msg();
     if buffer.status.nb_message ~= 0
-        msg = del_message(buffer);
+        msg = remove_message(buffer);
         memcpy(message_addr, msg.buff, msg.length);
         buffer.status.nb_message = buffer.status.nb_message - 1;
         len = msg.length;
@@ -26,7 +27,7 @@ function [len, return_code] = RECEIVE_BUFFER(buffer_id, time_out, message_addr)
             wakeup_proc(proc);
             buffer.status.waiting_processes = buffer.status.waiting_processes - 1;
             if PREEMPTION ~= 0
-                sechdule();
+                schedule();
             end
         end
         return_code = NO_ERROR;
@@ -39,8 +40,8 @@ function [len, return_code] = RECEIVE_BUFFER(buffer_id, time_out, message_addr)
     elseif time_out == INFINITE_TIME_VALUE
         set_proc_waiting(current, WT_BUFFER, buffer);
         buffer.status.waiting_processes = buffer.status.waiting_processes + 1;
-        sechdule();
-        msg = del_message(buffer);
+        schedule();
+        msg = remove_message(buffer);
         memcpy(message_addr, msg.buff, msg.length);
         buffer.status.nb_message = buffer.status.nb_message - 1;
         len = msg.length;
@@ -55,7 +56,7 @@ function [len, return_code] = RECEIVE_BUFFER(buffer_id, time_out, message_addr)
             len = 0;
             return_code = TIMED_OUT;
         else
-            msg = del_message(buffer);
+            msg = remove_message(buffer);
             memcpy(message_addr, msg.buff, msg.length);
             buffer.status.nb_message = buffer.status.nb_message - 1;
             len = msg.length;

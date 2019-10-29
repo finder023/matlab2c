@@ -80,37 +80,36 @@ void do_get_event_status( event_id_t event_id, event_status_t* event_status, ret
 void do_set_event( event_id_t event_id, return_code_t* return_code) {
 
     event_t* event = get_event_by_id(event_id);
+    struct proc_struct* proc = current;
     if ( event == NULL ) {
         *return_code = INVALID_PARAM;
         return;
     }
     event->status.event_state = UP;
     // stop_all_timer
-    list_entry_t *le = event->waiting_thread.next;
-    struct proc_struct *proc;
-    while ( le != &event->waiting_thread ) {
-        proc = le2proc(le, run_link);
-        if ( proc->status.process_state == WAITING && test_wg_flag(proc, WT_TIMER) ) {
+    list_entry_t *stle = event->waiting_thread.next;
+    while ( stle != &event->waiting_thread ) {
+        proc = le2proc(stle, run_link);
+        if ( proc->status.process_state == WAITING && test_wt_flag(proc, WT_TIMER) ) {
             clear_wt_flag(proc, WT_TIMER);
             timer_t* timer = proc->timer;
             del_timer(timer);
             kfree(timer);
         }
-        le = list_next(le);
+        stle = list_next(stle);
     }
     // wakeup_waiting_proc
-    list_entry_t *le = event->waiting_thread.next;
-    struct proc_struct *proc;
-    while ( le != &event->waiting_thread ) {
-        proc = le2proc(le, run_link);
-        if ( proc->status.process_state == WAITING && test_wg_flag(proc, WT_EVENT) ) {
+    list_entry_t *wwle = event->waiting_thread.next;
+    while ( wwle != &event->waiting_thread ) {
+        proc = le2proc(wwle, run_link);
+        if ( proc->status.process_state == WAITING && test_wt_flag(proc, WT_EVENT) ) {
             clear_wt_flag(proc, WT_EVENT);
             list_del(&proc->run_link);
             if ( proc->wait_state == 0 ) {
                 wakeup_proc(proc);
             }
         }
-        le = list_next(le);
+        wwle = list_next(wwle);
     }
     event->status.waiting_processes = 0;
     if ( PREEMPTION != 0 ) {

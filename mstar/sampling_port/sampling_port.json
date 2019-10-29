@@ -12,19 +12,19 @@
     },
 
     "read_sampling_message": {
-        "len":"size_t*",
+        "len":"message_size_t*",
         "validity":"validity_t*",
         "return_code":"return_code_t*",
         "sampling_port_id":"sampling_port_id_t",
-        "msg_addr":"void*",
+        "msg_addr":"message_addr_t",
         "get_sample_by_id":"sampling_port_t*"
     },
 
     "write_sampling_message": {
         "return_code":"return_code_t*",
         "sampling_port_id":"sampling_port_id_t",
-        "msg_addr":"void*",
-        "len":"size_t",
+        "msg_addr":"message_addr_t",
+        "len":"message_size_t",
         "get_sample_by_id":"sampling_port_t*",
         "ticks":"system_time_t"
     },
@@ -40,6 +40,7 @@
         "sampling_port_id":"sampling_port_id_t",
         "return_code":"return_code_t*",
         "sampling_port_status":"sampling_port_status_t*",
-        "get_sample_by_id":"sampling_port_t*"
+        "get_sample_by_id":"sampling_port_t*",
+        "name":"sampling_port_name_t"
     }
 }

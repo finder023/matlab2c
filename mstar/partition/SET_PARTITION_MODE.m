@@ -1,4 +1,5 @@
 function [return_code] = SET_PARTITION_MODE(mode)
+    proc = current;
     part = current.part;
     if mode >= 4
         return_code = INVALID_PARAM;

@@ -587,7 +587,7 @@ class FunctionCallExpr(Expr):
                 res += pre + 'timer_t *timer = %s->timer;\n' % proc
                 res += pre + 'del_timer(timer);\n'
                 res += pre + 'clear_wt_flag(%s, WT_TIMER);\n' % proc
-                res += pre + 'kfree_timer(timer);\n'
+                res += pre + 'kfree(timer);\n'
 
                 return res
 
@@ -615,18 +615,17 @@ class FunctionCallExpr(Expr):
 
                 ind = ' ' * 4
                 res = pre + '// wakeup_waiting_proc\n'
-                res += pre + 'list_entry_t *le = %s.next;\n' % waitingSet
-                res += pre + 'struct proc_struct *proc;\n'
-                res += pre + 'while ( le != &%s ) {\n' % waitingSet
-                res += pre + ind + 'proc = le2proc(le, %s);\n' % link
-                res += pre + ind + 'if ( proc->status.process_state == WAITING && test_wg_flag(proc, %s) ) {\n' % flag
+                res += pre + 'list_entry_t *wwle = %s.next;\n' % waitingSet
+                res += pre + 'while ( wwle != &%s ) {\n' % waitingSet
+                res += pre + ind + 'proc = le2proc(wwle, %s);\n' % link
+                res += pre + ind + 'if ( proc->status.process_state == WAITING && test_wt_flag(proc, %s) ) {\n' % flag
                 res += pre + ind*2 + 'clear_wt_flag(proc, %s);\n' % flag
                 res += pre + ind*2 + 'list_del(&proc->run_link);\n'
                 res += pre + ind*2 + 'if ( proc->wait_state == 0 ) {\n'
                 res += pre + ind*3 + 'wakeup_proc(proc);\n'
                 res += pre + ind*2 + '}\n'
                 res += pre + ind + '}\n'
-                res += pre + ind + 'le = list_next(le);\n'
+                res += pre + ind + 'wwle = list_next(wwle);\n'
                 res += pre + '}\n'
 
                 return res
@@ -637,17 +636,16 @@ class FunctionCallExpr(Expr):
                 ind = ' ' * 4
 
                 res = pre + '// stop_all_timer\n'
-                res += pre + 'list_entry_t *le = %s->waiting_thread.next;\n' % pres 
-                res += pre + 'struct proc_struct *proc;\n'
-                res += pre + 'while ( le != &%s->waiting_thread ) {\n' % pres
-                res += pre + ind + 'proc = le2proc(le, run_link);\n'
-                res += pre + ind + 'if ( proc->status.process_state == WAITING && test_wg_flag(proc, WT_TIMER) ) {\n'
+                res += pre + 'list_entry_t *stle = %s->waiting_thread.next;\n' % pres 
+                res += pre + 'while ( stle != &%s->waiting_thread ) {\n' % pres
+                res += pre + ind + 'proc = le2proc(stle, run_link);\n'
+                res += pre + ind + 'if ( proc->status.process_state == WAITING && test_wt_flag(proc, WT_TIMER) ) {\n'
                 res += pre + ind*2 + 'clear_wt_flag(proc, WT_TIMER);\n'
                 res += pre + ind*2 + 'timer_t* timer = proc->timer;\n'
                 res += pre + ind*2 + 'del_timer(timer);\n'
                 res += pre + ind*2 + 'kfree(timer);\n'
                 res += pre + ind + '}\n'
-                res += pre + ind + 'le = list_next(le);\n'
+                res += pre + ind + 'stle = list_next(stle);\n'
                 res += pre + '}\n'
 
                 return res
@@ -712,9 +710,9 @@ class FunctionCallExpr(Expr):
                 resources = para_list[0]
 
                 res = pre + '// remove_message\n'
-                res += pre + 'list_entry_t *le = %s->msg_set.next;\n'
-                res += pre + 'list_del_init(le);\n'
-                res += pre + '_msg = le2msg(le, msg_link);\n'
+                res += pre + 'list_entry_t *rmle = %s->msg_set.next;\n' % resources
+                res += pre + 'list_del_init(rmle);\n'
+                res += pre + '_msg = le2msg(rmle, msg_link);\n'
 
                 return res
 
@@ -723,12 +721,12 @@ class FunctionCallExpr(Expr):
                 pres = para_list[0]
                 msg = para_list[1]
 
-                res = pre + 'list_add_before(%s->msg_set, %s->msg_link);\n' % (pres, msg)
+                res = pre + 'list_add_before(&%s->msg_set, &%s->msg_link);\n' % (pres, msg)
                 res += pre + '%s->status.nb_message = %s->status.nb_message + 1;\n' % (pres, pres)
 
                 return res
 
-            if func_name == 'empty_msg':
+            if func_name == 'null_msg':
                 return 'NULL'
 
             if func_name == 'clear_message_set':
@@ -736,13 +734,13 @@ class FunctionCallExpr(Expr):
                 pres = para_list[0]
 
                 ind = ' ' * 4
-                res = pre + 'list_entry_t* le = %s->msg_set.next;\n' % pres
+                res = pre + 'list_entry_t* cmle = %s->msg_set.next;\n' % pres
                 res += pre + 'message_t *msg = NULL;\n'
-                res += pre + 'while ( le != &%s->msg_set ) {\n' % pres
-                res += pre + ind + 'list_del(le);\n'
-                res += pre + ind + 'msg = le2msg(le, msg_link);\n'
+                res += pre + 'while ( cmle != &%s->msg_set ) {\n' % pres
+                res += pre + ind + 'list_del(cmle);\n'
+                res += pre + ind + 'msg = le2msg(cmle, msg_link);\n'
                 res += pre + ind + 'free_message(msg);\n'
-                res += pre + ind + 'le = list_next(le);\n'
+                res += pre + ind + 'cmle = list_next(cmle);\n'
                 res += pre + '}\n'
 
                 return res

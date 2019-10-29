@@ -22,10 +22,10 @@ void do_resume( process_id_t process_id, return_code_t* return_code) {
         timer_t *timer = proc->timer;
         del_timer(timer);
         clear_wt_flag(proc, WT_TIMER);
-        kfree_timer(timer);
+        kfree(timer);
     }
     clear_wt_flag(proc, WT_SUSPEND);
-    if ( proc->wt_flag == 0 ) {
+    if ( proc->wait_state == 0 ) {
         wakeup_proc(proc);
         if ( PREEMPTION != 0 ) {
             schedule();
@@ -45,8 +45,9 @@ void do_get_process_status( process_id_t process_id, process_status_t* process_s
     *return_code = NO_ERROR;
 }
 
-void do_create_process( process_attributes_t* attr, process_id_t* pid, return_code_t* return_code) {
-    extern struct proc_struct* current;
+void do_create_process( process_attribute_t* attr, process_id_t* pid, return_code_t* return_code) {
+
+    partition_t* part = current->part;
     if ( valid_nr_proc() == 0 ) {
         *return_code = INVALID_CONFIG;
         return;
@@ -71,8 +72,8 @@ void do_create_process( process_attributes_t* attr, process_id_t* pid, return_co
         *return_code = INVALID_PARAM;
         return;
     }
-    if ( attr->status.operating_mode == NORMAL ) {
-        *return_code = INVLAID_MODE;
+    if ( part->status.operating_mode == NORMAL ) {
+        *return_code = INVALID_MODE;
         return;
     }
     struct proc_struct* proc = alloc_proc();
@@ -92,6 +93,7 @@ void do_create_process( process_attributes_t* attr, process_id_t* pid, return_co
     }
     init_proc_context(proc);
     set_proc_link(proc);
+    set_mm(proc);
     proc->status.process_state = DORMANT;
     *pid = proc->pid;
     *return_code = NO_ERROR;
@@ -146,12 +148,12 @@ void do_start( process_id_t process_id, return_code_t* return_code) {
                 schedule();
             }
         }
-    }
-    else {
-        // set_proc_waiting
-        proc->status.process_state = WAITING;
-        list_del_init(&proc->run_link);
-        set_wt_flag(proc, WT_PNORMAL);
+        else {
+            // set_proc_waiting
+            proc->status.process_state = WAITING;
+            list_del_init(&proc->run_link);
+            set_wt_flag(proc, WT_PNORMAL);
+        }
     }
     *return_code = NO_ERROR;
 }
@@ -164,7 +166,7 @@ void do_get_my_id( process_id_t* process_id, return_code_t* return_code) {
 
 void do_suspend_self( system_time_t time_out, return_code_t* return_code) {
 
-    if ( PREEMPTION != 1 ) {
+    if ( PREEMPTION == 0 ) {
         *return_code = INVALID_MODE;
         return;
     }
@@ -258,7 +260,7 @@ void do_stop( process_id_t process_id, return_code_t* return_code) {
         timer_t *timer = proc->timer;
         del_timer(timer);
         clear_wt_flag(proc, WT_TIMER);
-        kfree_timer(timer);
+        kfree(timer);
     }
     *return_code = NO_ERROR;
 }

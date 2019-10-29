@@ -27,7 +27,7 @@ function [return_code] = resume(process_id)
 
     clear_wt_flag(proc, WT_SUSPEND);
      
-    if proc.wt_flag == 0
+    if proc.wait_state == 0
         wakeup_proc(proc);
         if PREEMPTION ~= 0
             schedule();

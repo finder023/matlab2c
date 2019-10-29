@@ -1,6 +1,6 @@
 void do_create_sampling_port( sampling_port_name_t name, message_size_t max_msg_size, port_direction_t port_direction, system_time_t refresh_period, sampling_port_id_t* sampling_port_id, return_code_t* return_code) {
 
-    if ( nr_sampling_port >= MAX_NUMBER_OF_SAMPLING_PORT ) {
+    if ( nr_sampling_port >= MAX_NUMBER_OF_SAMPLING_PORTS ) {
         *return_code = INVALID_CONFIG;
         return;
     }
@@ -10,7 +10,7 @@ void do_create_sampling_port( sampling_port_name_t name, message_size_t max_msg_
         *return_code = INVALID_CONFIG;
         return;
     }
-    if ( port_direction != SOURCE && port_direction != DISTINATION ) {
+    if ( port_direction != SOURCE && port_direction != DESTINATION ) {
         *return_code = INVALID_CONFIG;
         return;
     }
@@ -45,7 +45,7 @@ void do_get_sampling_port_id( sampling_port_name_t name, sampling_port_id_t* sam
     *return_code = NO_ERROR;
 }
 
-void do_read_sampling_message( sampling_port_id_t sampling_port_id, void* msg_addr, size_t* len, validity_t* validity, return_code_t* return_code) {
+void do_read_sampling_message( sampling_port_id_t sampling_port_id, message_addr_t msg_addr, message_size_t* len, validity_t* validity, return_code_t* return_code) {
 
     sampling_port_t* sample = get_sample_by_id(sampling_port_id);
     if ( sample == NULL ) {
@@ -77,7 +77,7 @@ void do_read_sampling_message( sampling_port_id_t sampling_port_id, void* msg_ad
     *return_code = NO_ERROR;
 }
 
-void do_write_sampling_message( sampling_port_id_t sampling_port_id, void* msg_addr, size_t len, return_code_t* return_code) {
+void do_write_sampling_message( sampling_port_id_t sampling_port_id, message_addr_t msg_addr, message_size_t len, return_code_t* return_code) {
 
     sampling_port_t* sample = get_sample_by_id(sampling_port_id);
     if ( sample == NULL ) {
@@ -98,7 +98,7 @@ void do_write_sampling_message( sampling_port_id_t sampling_port_id, void* msg_a
     *return_code = NO_ERROR;
 }
 
-void do_get_sampling_port_status( unknowType name, sampling_port_status_t* sampling_port_status, return_code_t* return_code) {
+void do_get_sampling_port_status( sampling_port_id_t sampling_port_id, sampling_port_status_t* sampling_port_status, return_code_t* return_code) {
 
     sampling_port_t* sample = get_sample_by_id(sampling_port_id);
     if ( sample == NULL ) {

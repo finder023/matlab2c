@@ -20,9 +20,9 @@ function [return_code] = START(process_id)
             if PREEMPTION ~= 0
                 schedule();
             end
+        else
+            set_proc_waiting(proc, WT_PNORMAL, []);
         end
-    else
-        set_proc_waiting(proc, WT_PNORMAL, []);
     end
     return_code = NO_ERROR;
 end

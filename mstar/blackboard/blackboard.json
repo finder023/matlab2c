@@ -3,7 +3,7 @@
         "blackboard_id":"blackboard_id_t*",
         "return_code":"return_code_t*",
         "blackboard_name":"blackboard_name_t",
-        "max_message_size":"size_t",
+        "max_message_size":"message_size_t",
         "current":"struct proc_struct*",
         "get_blackboard_by_name":"blackboard_t*",
         "alloc_blackboard":"blackboard_t*"
@@ -12,17 +12,18 @@
     "display_blackboard": {
         "return_code":"return_code_t*",
         "blackboard_id":"blackboard_id_t",
-        "message_addr": "system_addr_t",
-        "len":"size_t",
-        "get_blackboard_by_id":"blackboard_t*"
+        "message_addr": "message_addr_t",
+        "len":"message_size_t",
+        "get_blackboard_by_id":"blackboard_t*",
+        "current":"struct proc_struct*"
     },
 
     "read_blackboard": {
-        "len":"size_t*",
+        "len":"message_size_t*",
         "return_code":"return_code_t*",
         "blackboard_id":"blackboard_id_t",
         "time_out":"system_time_t",
-        "message_addr":"system_addr_t",
+        "message_addr":"message_addr_t",
         "get_blackboard_by_id":"blackboard_t*",
         "current":"struct proc_struct*"
     },
@@ -43,7 +44,7 @@
     "get_blackboard_status":{
         "blackboard_id":"blackboard_id_t",
         "return_code":"return_code_t*",
-        "blackboard_status":"blackboard_status_t",
+        "blackboard_status":"blackboard_status_t*",
         "get_blackboard_by_id":"blackboard_t*"
     }
 }

@@ -14,8 +14,8 @@
     "send_buffer":{
         "return_code":"return_code_t*",
         "buffer_id":"buffer_id_t",
-        "message_addr":"system_addr_t",
-        "len":"size_t",
+        "message_addr":"message_addr_t",
+        "len":"message_size_t",
         "time_out":"system_time_t",
         "get_buffer_by_id":"buffer_t*",
         "current":"struct proc_struct*",
@@ -25,15 +25,16 @@
     },
 
     "receive_buffer": {
-        "len":"size_t*",
+        "len":"message_size_t*",
         "return_code":"return_code_t*",
         "buffer_id":"buffer_id_t",
         "time_out":"system_time_t",
-        "message_addr":"system_addr_t",
+        "message_addr":"message_addr_t",
         "get_buffer_by_id":"buffer_t*",
         "null_msg":"message_t*",
-        "del_msg":"message_t*",
-        "select_waiting_proc":"struct proc_struct*"
+        "remove_message":"message_t*",
+        "select_waiting_proc":"struct proc_struct*",
+        "current":"struct proc_struct*"
 
     },
 

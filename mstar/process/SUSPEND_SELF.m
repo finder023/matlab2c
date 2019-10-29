@@ -1,7 +1,7 @@
 function [ return_code ] = SUSPEND_SELF(time_out)
 
 
-    if PREEMPTION ~= 1
+    if PREEMPTION == 0
         return_code = INVALID_MODE;
         return;
     end

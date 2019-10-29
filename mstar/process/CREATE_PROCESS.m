@@ -1,7 +1,6 @@
 function [pid, return_code] = CREATE_PROCESS(attr)
 
-    global current;
-
+    part = current.part;
     if valid_nr_proc() == 0
         return_code = INVALID_CONFIG;
         return;
@@ -32,8 +31,8 @@ function [pid, return_code] = CREATE_PROCESS(attr)
         return;
     end
 
-    if attr.status.operating_mode == NORMAL
-        return_code = INVLAID_MODE;
+    if part.status.operating_mode == NORMAL
+        return_code = INVALID_MODE;
         return;
     end
 
@@ -59,6 +58,7 @@ function [pid, return_code] = CREATE_PROCESS(attr)
 
     init_proc_context(proc);
     set_proc_link(proc);
+    set_mm(proc);
     proc.status.process_state = DORMANT;
     pid = proc.pid;
     return_code = NO_ERROR;

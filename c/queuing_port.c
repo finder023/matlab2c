@@ -9,13 +9,13 @@ void do_clear_queuing_port( queuing_port_id_t id, return_code_t* return_code) {
         *return_code = INVALID_MODE;
         return;
     }
-    list_entry_t* le = queue->msg_set.next;
+    list_entry_t* cmle = queue->msg_set.next;
     message_t *msg = NULL;
-    while ( le != &queue->msg_set ) {
-        list_del(le);
-        msg = le2msg(le, msg_link);
+    while ( cmle != &queue->msg_set ) {
+        list_del(cmle);
+        msg = le2msg(cmle, msg_link);
         free_message(msg);
-        le = list_next(le);
+        cmle = list_next(cmle);
     }
     queue->status.nb_message = 0;
     *return_code = NO_ERROR;
@@ -32,7 +32,7 @@ void do_get_queuing_port_id( queuing_port_name_t name, queuing_port_id_t* id, re
     *return_code = NO_ERROR;
 }
 
-void do_create_queuing_port( queuing_port_name_t name, size_t max_msg_size, size_t max_nb_msg, unknowType port_directioin, queuing_discipline_t queuing_discipline, queuing_port_id_t* id, return_code_t* return_code) {
+void do_create_queuing_port( queuing_port_name_t name, message_size_t max_msg_size, message_range_t max_nb_msg, port_direction_t port_direction, queuing_discipline_t queuing_discipline, queuing_port_id_t* id, return_code_t* return_code) {
 
     if ( nr_queuing_port >= MAX_NUMBER_OF_QUEUING_PORTS ) {
         *return_code = INVALID_CONFIG;
@@ -51,7 +51,7 @@ void do_create_queuing_port( queuing_port_name_t name, size_t max_msg_size, size
         *return_code = INVALID_CONFIG;
         return;
     }
-    if ( port_directioin != SOURCE && port_directioin != DESTINATION ) {
+    if ( port_direction != SOURCE && port_direction != DESTINATION ) {
         *return_code = INVALID_CONFIG;
         return;
     }
@@ -86,7 +86,7 @@ void do_get_queuing_port_status( queuing_port_id_t id, queuing_port_status_t* st
     *return_code = NO_ERROR;
 }
 
-void do_send_queuing_message( queuing_port_id_t id, system_addr_t msg_addr, size_t len, system_time_t time_out, return_code_t* return_code) {
+void do_send_queuing_message( queuing_port_id_t id, message_addr_t msg_addr, message_size_t len, system_time_t time_out, return_code_t* return_code) {
 
     queuing_port_t* queue = get_queue_by_id(id);
     if ( queue == NULL ) {
@@ -105,11 +105,11 @@ void do_send_queuing_message( queuing_port_id_t id, system_addr_t msg_addr, size
         *return_code = INVALID_PARAM;
         return;
     }
-    message_t msg = alloc_message(queue->status.max_message_size);
+    message_t* msg = alloc_message(queue->status.max_message_size);
     if ( queue->status.max_nb_message > queue->status.nb_message ) {
-        memcpy(msg.buff, msg_addr, len);
-        msg.length = len;
-        list_add_before(queue->msg_set, msg->msg_link);
+        memcpy(msg->buff, msg_addr, len);
+        msg->length = len;
+        list_add_before(&queue->msg_set, &msg->msg_link);
         queue->status.nb_message = queue->status.nb_message + 1;
         if ( queue->status.nb_message == 1 ) {
             if ( queue->status.waiting_process > 0 ) {
@@ -123,7 +123,7 @@ void do_send_queuing_message( queuing_port_id_t id, system_addr_t msg_addr, size
                     timer_t *timer = proc->timer;
                     del_timer(timer);
                     clear_wt_flag(proc, WT_TIMER);
-                    kfree_timer(timer);
+                    kfree(timer);
                 }
                 wakeup_proc(proc);
                 schedule();
@@ -159,9 +159,9 @@ void do_send_queuing_message( queuing_port_id_t id, system_addr_t msg_addr, size
         }
         else {
             current->timer = NULL;
-            memcpy(msg.buff, msg_addr, len);
-            msg.length = len;
-            list_add_before(queue->msg_set, msg->msg_link);
+            memcpy(msg->buff, msg_addr, len);
+            msg->length = len;
+            list_add_before(&queue->msg_set, &msg->msg_link);
             queue->status.nb_message = queue->status.nb_message + 1;
             *return_code = NO_ERROR;
         }
@@ -175,18 +175,18 @@ void do_send_queuing_message( queuing_port_id_t id, system_addr_t msg_addr, size
         queue->status.waiting_process = queue->status.waiting_process + 1;
         schedule();
         queue->status.waiting_process = queue->status.waiting_process - 1;
-        memcpy(msg.buff, msg_addr, len);
-        msg.length = len;
-        list_add_before(queue->msg_set, msg->msg_link);
+        memcpy(msg->buff, msg_addr, len);
+        msg->length = len;
+        list_add_before(&queue->msg_set, &msg->msg_link);
         queue->status.nb_message = queue->status.nb_message + 1;
         *return_code = NO_ERROR;
     }
 }
 
-void do_receive_queuing_message( queuing_port_id_t id, system_time_t time_out, system_addr_t message_addr, size_t* len, return_code_t* return_code) {
+void do_receive_queuing_message( queuing_port_id_t id, system_time_t time_out, message_addr_t message_addr, message_size_t* len, return_code_t* return_code) {
 
     queuing_port_t* queue = get_queue_by_id(id);
-    message_t* msg = null_msg();
+    message_t* msg = NULL;
     if ( queue == NULL ) {
         *return_code = INVALID_PARAM;
         return;
@@ -197,9 +197,9 @@ void do_receive_queuing_message( queuing_port_id_t id, system_time_t time_out, s
     }
     if ( queue->status.nb_message > 0 ) {
         // remove_message
-        list_entry_t *le = %s->msg_set.next;
-        list_del_init(le);
-        msg = le2msg(le, msg_link);
+        list_entry_t *rmle = queue->msg_set.next;
+        list_del_init(rmle);
+        msg = le2msg(rmle, msg_link);
         memcpy(message_addr, msg->buff, msg->length);
         *len = msg->length;
         queue->status.nb_message = queue->status.nb_message - 1;
@@ -232,9 +232,9 @@ void do_receive_queuing_message( queuing_port_id_t id, system_time_t time_out, s
         schedule();
         queue->status.waiting_process = queue->status.waiting_process - 1;
         // remove_message
-        list_entry_t *le = %s->msg_set.next;
-        list_del_init(le);
-        msg = le2msg(le, msg_link);
+        list_entry_t *rmle = queue->msg_set.next;
+        list_del_init(rmle);
+        msg = le2msg(rmle, msg_link);
         memcpy(message_addr, msg->buff, msg->length);
         *len = msg->length;
         queue->status.nb_message = queue->status.nb_message - 1;
@@ -261,9 +261,9 @@ void do_receive_queuing_message( queuing_port_id_t id, system_time_t time_out, s
         else {
             current->timer = NULL;
             // remove_message
-            list_entry_t *le = %s->msg_set.next;
-            list_del_init(le);
-            msg = le2msg(le, msg_link);
+            list_entry_t *rmle = queue->msg_set.next;
+            list_del_init(rmle);
+            msg = le2msg(rmle, msg_link);
             memcpy(message_addr, msg->buff, msg->length);
             *len = msg->length;
             queue->status.nb_message = queue->status.nb_message - 1;

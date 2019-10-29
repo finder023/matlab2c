@@ -45,7 +45,7 @@ void do_signal_semaphore( semaphore_id_t semaphore_id, return_code_t* return_cod
             timer_t *timer = proc->timer;
             del_timer(timer);
             clear_wt_flag(proc, WT_TIMER);
-            kfree_timer(timer);
+            kfree(timer);
         }
         clear_wt_flag(proc, WT_KSEM);
         if ( test_wt_flag(proc, WT_SUSPEND) == 0 ) {

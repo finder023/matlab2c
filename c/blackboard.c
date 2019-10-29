@@ -9,7 +9,7 @@ void do_get_blackboard_id( blackboard_name_t blackboard_name, blackboard_id_t* b
     *return_code = NO_ERROR;
 }
 
-void do_create_blackboard( blackboard_name_t blackboard_name, size_t max_message_size, blackboard_id_t* blackboard_id, return_code_t* return_code) {
+void do_create_blackboard( blackboard_name_t blackboard_name, message_size_t max_message_size, blackboard_id_t* blackboard_id, return_code_t* return_code) {
 
     partition_t* part = current->part;
     if ( part->blackboard_num >= MAX_NUMBER_OF_BLACKBOARDS ) {
@@ -44,9 +44,10 @@ void do_create_blackboard( blackboard_name_t blackboard_name, size_t max_message
     *return_code = NO_ERROR;
 }
 
-void do_display_blackboard( blackboard_id_t blackboard_id, system_addr_t message_addr, size_t len, return_code_t* return_code) {
+void do_display_blackboard( blackboard_id_t blackboard_id, message_addr_t message_addr, message_size_t len, return_code_t* return_code) {
 
     blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
+    struct proc_struct* proc = current;
     if ( bboard == NULL ) {
         *return_code = INVALID_PARAM;
         return;
@@ -63,31 +64,29 @@ void do_display_blackboard( blackboard_id_t blackboard_id, system_addr_t message
     memcpy(bboard->buff, message_addr, len);
     bboard->length = len;
     // stop_all_timer
-    list_entry_t *le = bboard->waiting_thread.next;
-    struct proc_struct *proc;
-    while ( le != &bboard->waiting_thread ) {
-        proc = le2proc(le, run_link);
-        if ( proc->status.process_state == WAITING && test_wg_flag(proc, WT_TIMER) ) {
+    list_entry_t *stle = bboard->waiting_thread.next;
+    while ( stle != &bboard->waiting_thread ) {
+        proc = le2proc(stle, run_link);
+        if ( proc->status.process_state == WAITING && test_wt_flag(proc, WT_TIMER) ) {
             clear_wt_flag(proc, WT_TIMER);
             timer_t* timer = proc->timer;
             del_timer(timer);
             kfree(timer);
         }
-        le = list_next(le);
+        stle = list_next(stle);
     }
     // wakeup_waiting_proc
-    list_entry_t *le = bboard->waiting_thread.next;
-    struct proc_struct *proc;
-    while ( le != &bboard->waiting_thread ) {
-        proc = le2proc(le, run_link);
-        if ( proc->status.process_state == WAITING && test_wg_flag(proc, WT_BBOARD) ) {
+    list_entry_t *wwle = bboard->waiting_thread.next;
+    while ( wwle != &bboard->waiting_thread ) {
+        proc = le2proc(wwle, run_link);
+        if ( proc->status.process_state == WAITING && test_wt_flag(proc, WT_BBOARD) ) {
             clear_wt_flag(proc, WT_BBOARD);
             list_del(&proc->run_link);
             if ( proc->wait_state == 0 ) {
                 wakeup_proc(proc);
             }
         }
-        le = list_next(le);
+        wwle = list_next(wwle);
     }
     bboard->status.waiting_processes = 0;
     if ( PREEMPTION != 0 ) {
@@ -96,7 +95,7 @@ void do_display_blackboard( blackboard_id_t blackboard_id, system_addr_t message
     *return_code = NO_ERROR;
 }
 
-void do_read_blackboard( blackboard_id_t blackboard_id, system_time_t time_out, system_addr_t message_addr, size_t* len, return_code_t* return_code) {
+void do_read_blackboard( blackboard_id_t blackboard_id, system_time_t time_out, message_addr_t message_addr, message_size_t* len, return_code_t* return_code) {
 
     blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
     struct proc_struct* proc = current;
@@ -141,7 +140,7 @@ void do_read_blackboard( blackboard_id_t blackboard_id, system_time_t time_out, 
         list_add_before(&bboard->waiting_thread, &proc->run_link);
         // add_timer
         timer_t *timer = kmalloc(sizeof(timer_t));
-        timer_init(timer, proc, timeout);
+        timer_init(timer, proc, time_out);
         set_wt_flag(proc, WT_TIMER);
         add_timer(timer);
         proc->timer = timer;
@@ -171,14 +170,14 @@ void do_clear_blackboard( blackboard_id_t blackboard_id, return_code_t* return_c
     *return_code = NO_ERROR;
 }
 
-void do_get_blackboard_status( blackboard_id_t blackboard_id, blackboard_status_t blackboard_status, return_code_t* return_code) {
+void do_get_blackboard_status( blackboard_id_t blackboard_id, blackboard_status_t* blackboard_status, return_code_t* return_code) {
 
     blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
     if ( bboard == NULL ) {
         *return_code = INVALID_PARAM;
         return;
     }
-    blackboard_status = bboard->status;
+    *blackboard_status = bboard->status;
     *return_code = NO_ERROR;
 }
 

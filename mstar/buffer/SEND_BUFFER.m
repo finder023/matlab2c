@@ -31,7 +31,7 @@ function [return_code] = SEND_BUFFER(buffer_id, message_addr, len, time_out)
             proc = select_waiting_proc(buffer);
             clear_wt_flag(proc, WT_BUFFER);
             wakeup_proc(proc);
-            buffer.status.waiting_processes = buff.status.waiting_processes - 1;
+            buffer.status.waiting_processes = buffer.status.waiting_processes - 1;
             if test_wt_flag(proc, WT_TIMER)
                 stop_timer(proc);
             end

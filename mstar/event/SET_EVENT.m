@@ -1,5 +1,6 @@
 function [return_code] = SET_EVENT(event_id)
     event = get_event_by_id(event_id);
+    proc = current;
     if event == []
         return_code = INVALID_PARAM;
         return;

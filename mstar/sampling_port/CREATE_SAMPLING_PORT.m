@@ -1,5 +1,5 @@
 function [sampling_port_id, return_code] = CREATE_SAMPLING_PORT(name, max_msg_size, port_direction, refresh_period)
-    if nr_sampling_port >= MAX_NUMBER_OF_SAMPLING_PORT
+    if nr_sampling_port >= MAX_NUMBER_OF_SAMPLING_PORTS
         return_code = INVALID_CONFIG;
         return;
     end
@@ -12,7 +12,7 @@ function [sampling_port_id, return_code] = CREATE_SAMPLING_PORT(name, max_msg_si
         return;
     end
 
-    if port_direction ~= SOURCE && port_direction ~= DISTINATION
+    if port_direction ~= SOURCE && port_direction ~= DESTINATION
         return_code = INVALID_CONFIG;
         return;
     end

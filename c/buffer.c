@@ -53,9 +53,10 @@ void do_get_buffer_id( buffer_name_t buffer_name, buffer_id_t* buffer_id, return
     *return_code = NO_ERROR;
 }
 
-void do_receive_buffer( buffer_id_t buffer_id, system_time_t time_out, system_addr_t message_addr, size_t* len, return_code_t* return_code) {
+void do_receive_buffer( buffer_id_t buffer_id, system_time_t time_out, message_addr_t message_addr, message_size_t* len, return_code_t* return_code) {
 
     buffer_t* buffer = get_buffer_by_id(buffer_id);
+    struct proc_struct* proc = current;
     if ( buffer == NULL ) {
         *return_code = INVALID_PARAM;
         return;
@@ -64,9 +65,12 @@ void do_receive_buffer( buffer_id_t buffer_id, system_time_t time_out, system_ad
         *return_code = INVALID_PARAM;
         return;
     }
-    message_t* msg = null_msg();
+    message_t* msg = NULL;
     if ( buffer->status.nb_message != 0 ) {
-        *msg = del_message(buffer);
+        // remove_message
+        list_entry_t *rmle = buffer->msg_set.next;
+        list_del_init(rmle);
+        msg = le2msg(rmle, msg_link);
         memcpy(message_addr, msg->buff, msg->length);
         buffer->status.nb_message = buffer->status.nb_message - 1;
         *len = msg->length;
@@ -80,13 +84,13 @@ void do_receive_buffer( buffer_id_t buffer_id, system_time_t time_out, system_ad
                 timer_t *timer = proc->timer;
                 del_timer(timer);
                 clear_wt_flag(proc, WT_TIMER);
-                kfree_timer(timer);
+                kfree(timer);
             }
             clear_wt_flag(proc, WT_BUFFER);
             wakeup_proc(proc);
             buffer->status.waiting_processes = buffer->status.waiting_processes - 1;
             if ( PREEMPTION != 0 ) {
-                sechdule();
+                schedule();
             }
         }
         *return_code = NO_ERROR;
@@ -106,8 +110,11 @@ void do_receive_buffer( buffer_id_t buffer_id, system_time_t time_out, system_ad
         set_wt_flag(current, WT_BUFFER);
         list_add_before(&buffer->waiting_thread, &current->run_link);
         buffer->status.waiting_processes = buffer->status.waiting_processes + 1;
-        sechdule();
-        *msg = del_message(buffer);
+        schedule();
+        // remove_message
+        list_entry_t *rmle = buffer->msg_set.next;
+        list_del_init(rmle);
+        msg = le2msg(rmle, msg_link);
         memcpy(message_addr, msg->buff, msg->length);
         buffer->status.nb_message = buffer->status.nb_message - 1;
         *len = msg->length;
@@ -128,12 +135,15 @@ void do_receive_buffer( buffer_id_t buffer_id, system_time_t time_out, system_ad
         buffer->status.waiting_processes = buffer->status.waiting_processes + 1;
         schedule();
         clear_wt_flag(proc, WT_BUFFER);
-        if ( current.timer == NULL ) {
+        if ( current->timer == NULL ) {
             *len = 0;
             *return_code = TIMED_OUT;
         }
         else {
-            *msg = del_message(buffer);
+            // remove_message
+            list_entry_t *rmle = buffer->msg_set.next;
+            list_del_init(rmle);
+            msg = le2msg(rmle, msg_link);
             memcpy(message_addr, msg->buff, msg->length);
             buffer->status.nb_message = buffer->status.nb_message - 1;
             *len = msg->length;
@@ -142,10 +152,10 @@ void do_receive_buffer( buffer_id_t buffer_id, system_time_t time_out, system_ad
     }
 }
 
-void do_send_buffer( buffer_id_t buffer_id, system_addr_t message_addr, size_t len, system_time_t time_out, return_code_t* return_code) {
+void do_send_buffer( buffer_id_t buffer_id, message_addr_t message_addr, message_size_t len, system_time_t time_out, return_code_t* return_code) {
 
     buffer_t* buffer = get_buffer_by_id(buffer_id);
-    message_t* msg = null_msg();
+    message_t* msg = NULL;
     if ( buffer == NULL ) {
         *return_code = INVALID_PARAM;
         return;
@@ -167,7 +177,7 @@ void do_send_buffer( buffer_id_t buffer_id, system_addr_t message_addr, size_t l
             msg = alloc_message(buffer->status.max_message_size);
             msg->length = len;
             memcpy(msg->buff, message_addr, len);
-            list_add_before(buffer->msg_set, msg->msg_link);
+            list_add_before(&buffer->msg_set, &msg->msg_link);
             buffer->status.nb_message = buffer->status.nb_message + 1;
         }
         else {
@@ -177,18 +187,18 @@ void do_send_buffer( buffer_id_t buffer_id, system_addr_t message_addr, size_t l
             list_del_init(&proc->run_link);
             clear_wt_flag(proc, WT_BUFFER);
             wakeup_proc(proc);
-            buffer->status.waiting_processes = buff.status.waiting_processes - 1;
+            buffer->status.waiting_processes = buffer->status.waiting_processes - 1;
             if ( test_wt_flag(proc, WT_TIMER) ) {
                 // stop_timer
                 timer_t *timer = proc->timer;
                 del_timer(timer);
                 clear_wt_flag(proc, WT_TIMER);
-                kfree_timer(timer);
+                kfree(timer);
             }
             msg = alloc_message(buffer->status.max_message_size);
             msg->length = len;
             memcpy(msg->buff, message_addr, len);
-            list_add_before(buffer->msg_set, msg->msg_link);
+            list_add_before(&buffer->msg_set, &msg->msg_link);
             buffer->status.nb_message = buffer->status.nb_message + 1;
             if ( PREEMPTION != 0 ) {
                 schedule();
@@ -215,7 +225,7 @@ void do_send_buffer( buffer_id_t buffer_id, system_addr_t message_addr, size_t l
         msg = alloc_message(buffer->status.max_message_size);
         msg->length = len;
         memcpy(msg->buff, message_addr, len);
-        list_add_before(buffer->msg_set, msg->msg_link);
+        list_add_before(&buffer->msg_set, &msg->msg_link);
         buffer->status.nb_message = buffer->status.nb_message + 1;
         *return_code = NO_ERROR;
     }
@@ -241,7 +251,7 @@ void do_send_buffer( buffer_id_t buffer_id, system_addr_t message_addr, size_t l
             msg = alloc_message(buffer->status.max_message_size);
             msg->length = len;
             memcpy(msg->buff, message_addr, len);
-            list_add_before(buffer->msg_set, msg->msg_link);
+            list_add_before(&buffer->msg_set, &msg->msg_link);
             buffer->status.nb_message = buffer->status.nb_message + 1;
             *return_code = NO_ERROR;
         }
