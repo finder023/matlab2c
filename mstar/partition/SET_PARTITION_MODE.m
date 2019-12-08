@@ -1,4 +1,15 @@
 function [return_code] = SET_PARTITION_MODE(mode)
+    global current;
+    global NORMAL;
+    global NO_ACTION;
+    global COLD_START;
+    global WARM_START;
+    global INVALID_MODE;
+    global IDLE;
+    global INVALID_PARAM;
+    global WT_PNORMAL;
+    global NO_ERROR;
+    
     proc = current;
     part = current.part;
     if mode >= 4
@@ -30,6 +41,7 @@ function [return_code] = SET_PARTITION_MODE(mode)
         end
         part.status.lock_level = 0;
     end
+    update_part(part);
     return_code = NO_ERROR;
 
 end

@@ -1,3 +1,5 @@
+#include < buffer >
+
 void do_create_buffer( buffer_name_t buffer_name, message_size_t max_message_size, message_range_t max_nb_message, queuing_discipline_t queuing_discipline, buffer_id_t* buffer_id, return_code_t* return_code) {
 
     partition_t* part = current->part;
@@ -42,6 +44,7 @@ void do_create_buffer( buffer_name_t buffer_name, message_size_t max_message_siz
     *return_code = NO_ERROR;
 }
 
+
 void do_get_buffer_id( buffer_name_t buffer_name, buffer_id_t* buffer_id, return_code_t* return_code) {
 
     buffer_t* buffer = get_buffer_by_name(buffer_name);
@@ -52,6 +55,19 @@ void do_get_buffer_id( buffer_name_t buffer_name, buffer_id_t* buffer_id, return
     *buffer_id = buffer->id;
     *return_code = NO_ERROR;
 }
+
+
+void do_get_buffer_status( buffer_id_t buffer_id, buffer_status_t* buffer_status, return_code_t* return_code) {
+
+    buffer_t* buffer = get_buffer_by_id(buffer_id);
+    if ( buffer == NULL ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    *buffer_status = buffer->status;
+    *return_code = NO_ERROR;
+}
+
 
 void do_receive_buffer( buffer_id_t buffer_id, system_time_t time_out, message_addr_t message_addr, message_size_t* len, return_code_t* return_code) {
 
@@ -151,6 +167,7 @@ void do_receive_buffer( buffer_id_t buffer_id, system_time_t time_out, message_a
         }
     }
 }
+
 
 void do_send_buffer( buffer_id_t buffer_id, message_addr_t message_addr, message_size_t len, system_time_t time_out, return_code_t* return_code) {
 
@@ -258,14 +275,4 @@ void do_send_buffer( buffer_id_t buffer_id, message_addr_t message_addr, message
     }
 }
 
-void do_get_buffer_status( buffer_id_t buffer_id, buffer_status_t* buffer_status, return_code_t* return_code) {
-
-    buffer_t* buffer = get_buffer_by_id(buffer_id);
-    if ( buffer == NULL ) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-    *buffer_status = buffer->status;
-    *return_code = NO_ERROR;
-}
 

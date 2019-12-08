@@ -1,6 +1,9 @@
 function [process_id, return_code]= GET_PROCESS_ID(process_name)
+    global INVALID_CONFIG;
+    global NO_ERROR;
+
     proc = find_proc_name(process_name);
-    if proc == []
+    if isequal(proc, [])
         return_code = INVALID_CONFIG;
         return;
     end

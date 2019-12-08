@@ -218,13 +218,14 @@ class Matlab2CVisitor(MatlabVisitor):
         global_name = list()
         for name in ctx.name():
             global_name.append(Var(name.getText(),
-                    self.all_var_type[name.getText()]))
+                    self.all_var_type[name.getText()] if name.getText() in self.all_var_type else ''))
         self.route.pop()
 
         self.indent_level.addLevel()
         # save para in vars
         _expr = NormalExpr(type_='global_define_list', 
-                    vars_=global_name, 
+                    # vars_=global_name,
+                    vars_=[],
                     subexpr_=False, indent_=deepcopy(self.indent_level))
         return _expr
 
@@ -503,11 +504,11 @@ class Matlab2CVisitor(MatlabVisitor):
         if ctx.unary_operation():
             opr = ctx.unary_operation().getText()
 
-        assert len(ctx.expr()) == 1
-        _expr = self.visit(ctx.expr(0))
+        # assert len(ctx.expr()) == 1
+        _expr = self.visit(ctx.expr())
         self.route.pop()
 
-        return UnaryExpr(unary_expr_=opr, expr_=_expr)
+        return UnaryExpr(unary_opr_=opr, expr_=_expr)
 
     # Visit a parse tree produced by MatlabParser#return_state.
     def visitReturn_state(self, ctx:MatlabParser.Return_stateContext):

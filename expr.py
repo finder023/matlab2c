@@ -229,6 +229,7 @@ class NormalExpr(Expr):
             return ', '.join(code_list) 
 
         elif self.Type == 'global_define_list':
+            return str()
             if len(self._vars) == 0:
                 return str()
 
@@ -455,6 +456,9 @@ class AssignExpr(Expr):
         elif rexpr.Type == 'binaryExpr':
             rvar = rexpr._vars[-1]
         
+        elif rexpr.Type == 'unary_operaExpr':
+            rvar = rexpr._vars[-1]
+        
         else:
             raise TypeError('not supported rtype in assign tostr, ', str(rexpr))
         
@@ -483,14 +487,15 @@ class AssignExpr(Expr):
 class UnaryExpr(Expr):
     def __init__(self, unary_opr_=str(), expr_=Expr(), subexpr_=True,
                     indent_=HierarchicalCoding(), vars_=list()):
-        super().__init__(type_='unary_operaExpr', deps_=[unary_opr_, expr_],
+        super().__init__(type_='unary_operaExpr', deps_=[expr_],
                             vars_=vars_)
         self.sub_expr = subexpr_
         self.indent_level = indent_
+        self.pri_opr = unary_opr_
 
     def toStr(self):
-        unary_str = self.Deps[0]
-        expr_ = self.Deps[1]
+        unary_str = self.pri_opr
+        expr_ = self.Deps[0]
         assert isinstance(unary_str, str), 'unary opr need to be str type'
         assert unary_str == '-' or unary_str == '~'
         if unary_str == '~':

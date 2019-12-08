@@ -1,9 +1,12 @@
+#include < partition >
+
 void do_get_partition_status( partition_status_t* status, return_code_t* return_code) {
 
     partition_t* part = current->part;
     *status = part->status;
     *return_code = NO_ERROR;
 }
+
 
 void do_set_partition_mode( operating_mode_t mode, return_code_t* return_code) {
 
@@ -45,6 +48,8 @@ void do_set_partition_mode( operating_mode_t mode, return_code_t* return_code) {
         }
         part->status.lock_level = 0;
     }
+    update_part(part);
     *return_code = NO_ERROR;
 }
+
 

@@ -1,3 +1,46 @@
+#include < semaphore >
+
+void do_create_semaphore( semaphore_name_t semaphore_name, semaphore_value_t current_value, semaphore_value_t max_value, queuing_discipline_t queuing_discipline, semaphore_id_t* semaphore_id, return_code_t* return_code) {
+
+    partition_t* part = current->part;
+    if ( part->sem_num >= MAX_NUMBER_OF_SEMAPHORES ) {
+        *return_code = INVALID_CONFIG;
+        return;
+    }
+    sem_t* sem = get_sem_by_name(semaphore_name);
+    if ( sem != NULL ) {
+        *return_code = NO_ACTION;
+        return;
+    }
+    if ( current_value > MAX_SEMAPHORE_VALUE ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( max_value > MAX_SEMAPHORE_VALUE ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( queuing_discipline != FIFO && queuing_discipline != PRIORITY ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    sem = alloc_sem();
+    if ( sem == NULL ) {
+        *return_code = INVALID_CONFIG;
+        return;
+    }
+    strcpy(sem->sem_name, semaphore_name);
+    *semaphore_id = sem->sem_id;
+    sem->sem_status.current_value = current_value;
+    sem->sem_status.max_value = max_value;
+    sem->sem_status.waiting_processes = 0;
+// add_sem
+    list_add_after(&part->all_sem, &sem->sem_link);
+    part->sem_num = part->sem_num + 1;
+    *return_code = NO_ERROR;
+}
+
+
 void do_get_semaphore_id( semaphore_name_t semaphore_name, semaphore_id_t* semaphore_id, return_code_t* return_code) {
 
     sem_t* sem = get_sem_by_name(semaphore_name);
@@ -9,6 +52,7 @@ void do_get_semaphore_id( semaphore_name_t semaphore_name, semaphore_id_t* semap
     *return_code = NO_ERROR;
 }
 
+
 void do_get_semaphore_status( semaphore_id_t semaphore_id, semaphore_status_t* semaphore_status, return_code_t* return_code) {
 
     sem_t* sem = get_sem_by_id(semaphore_id);
@@ -19,6 +63,7 @@ void do_get_semaphore_status( semaphore_id_t semaphore_id, semaphore_status_t* s
     *semaphore_status = sem->sem_status;
     *return_code = NO_ERROR;
 }
+
 
 void do_signal_semaphore( semaphore_id_t semaphore_id, return_code_t* return_code) {
 
@@ -57,6 +102,7 @@ void do_signal_semaphore( semaphore_id_t semaphore_id, return_code_t* return_cod
         *return_code = NO_ERROR;
     }
 }
+
 
 void do_wait_semaphore( semaphore_id_t semaphore_id, system_time_t time_out, return_code_t* return_code) {
 
@@ -120,43 +166,4 @@ void do_wait_semaphore( semaphore_id_t semaphore_id, system_time_t time_out, ret
     }
 }
 
-void do_create_semaphore( semaphore_name_t semaphore_name, semaphore_value_t current_value, semaphore_value_t max_value, queuing_discipline_t queuing_discipline, semaphore_id_t* semaphore_id, return_code_t* return_code) {
-
-    partition_t* part = current->part;
-    if ( part->sem_num >= MAX_NUMBER_OF_SEMAPHORES ) {
-        *return_code = INVALID_CONFIG;
-        return;
-    }
-    sem_t* sem = get_sem_by_name(semaphore_name);
-    if ( sem != NULL ) {
-        *return_code = NO_ACTION;
-        return;
-    }
-    if ( current_value > MAX_SEMAPHORE_VALUE ) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-    if ( max_value > MAX_SEMAPHORE_VALUE ) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-    if ( queuing_discipline != FIFO && queuing_discipline != PRIORITY ) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-    sem = alloc_sem();
-    if ( sem == NULL ) {
-        *return_code = INVALID_CONFIG;
-        return;
-    }
-    strcpy(sem->sem_name, semaphore_name);
-    *semaphore_id = sem->sem_id;
-    sem->sem_status.current_value = current_value;
-    sem->sem_status.max_value = max_value;
-    sem->sem_status.waiting_processes = 0;
-// add_sem
-    list_add_after(&part->all_sem, &sem->sem_link);
-    part->sem_num = part->sem_num + 1;
-    *return_code = NO_ERROR;
-}
 

@@ -93,3 +93,14 @@ ret_func = [
     'select_waiting_proc',
     'remove_message'
 ]
+
+cvt_module = [
+    'blackboard',
+    'buffer',
+    'event',
+    'partition',
+    'process',
+    'queuing_port',
+    'sampling_port',
+    'semaphore'
+]

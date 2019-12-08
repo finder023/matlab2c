@@ -1,0 +1,7 @@
+{
+    "pid": "process_id_t*",
+    "return_code": "return_code_t*",
+    "attr": "process_attr_t*",
+    "alloc_proc": "task_t*" 
+}
+

@@ -1,13 +1,16 @@
-void do_get_blackboard_id( blackboard_name_t blackboard_name, blackboard_id_t* blackboard_id, return_code_t* return_code) {
+#include < blackboard >
 
-    blackboard_t* bboard = get_blackboard_by_name(blackboard_name);
+void do_clear_blackboard( blackboard_id_t blackboard_id, return_code_t* return_code) {
+
+    blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
     if ( bboard == NULL ) {
         *return_code = INVALID_PARAM;
         return;
     }
-    *blackboard_id = bboard->id;
+    bboard->status.empty_indicator = EMPTY;
     *return_code = NO_ERROR;
 }
+
 
 void do_create_blackboard( blackboard_name_t blackboard_name, message_size_t max_message_size, blackboard_id_t* blackboard_id, return_code_t* return_code) {
 
@@ -43,6 +46,7 @@ void do_create_blackboard( blackboard_name_t blackboard_name, message_size_t max
     *blackboard_id = blackboard->id;
     *return_code = NO_ERROR;
 }
+
 
 void do_display_blackboard( blackboard_id_t blackboard_id, message_addr_t message_addr, message_size_t len, return_code_t* return_code) {
 
@@ -94,6 +98,31 @@ void do_display_blackboard( blackboard_id_t blackboard_id, message_addr_t messag
     }
     *return_code = NO_ERROR;
 }
+
+
+void do_get_blackboard_id( blackboard_name_t blackboard_name, blackboard_id_t* blackboard_id, return_code_t* return_code) {
+
+    blackboard_t* bboard = get_blackboard_by_name(blackboard_name);
+    if ( bboard == NULL ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    *blackboard_id = bboard->id;
+    *return_code = NO_ERROR;
+}
+
+
+void do_get_blackboard_status( blackboard_id_t blackboard_id, blackboard_status_t* blackboard_status, return_code_t* return_code) {
+
+    blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
+    if ( bboard == NULL ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    *blackboard_status = bboard->status;
+    *return_code = NO_ERROR;
+}
+
 
 void do_read_blackboard( blackboard_id_t blackboard_id, system_time_t time_out, message_addr_t message_addr, message_size_t* len, return_code_t* return_code) {
 
@@ -159,25 +188,4 @@ void do_read_blackboard( blackboard_id_t blackboard_id, system_time_t time_out, 
     }
 }
 
-void do_clear_blackboard( blackboard_id_t blackboard_id, return_code_t* return_code) {
-
-    blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
-    if ( bboard == NULL ) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-    bboard->status.empty_indicator = EMPTY;
-    *return_code = NO_ERROR;
-}
-
-void do_get_blackboard_status( blackboard_id_t blackboard_id, blackboard_status_t* blackboard_status, return_code_t* return_code) {
-
-    blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
-    if ( bboard == NULL ) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-    *blackboard_status = bboard->status;
-    *return_code = NO_ERROR;
-}
 
